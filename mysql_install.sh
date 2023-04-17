@@ -6,21 +6,26 @@ tmp_password=''
 linux_user='work'
 linux_password='work'
 
-mysql_version='5.7.40'
-mysql_main_version="5.7"
-mysql_glibc_version='2.12'
+mysql_version='8.0.25'
+mysql_main_version="8.0"
+mysql_glibc_version='2.17'
 linux_arch='x86_64'
 mysql_name_dir="mysql-${mysql_version}-linux-glibc${mysql_glibc_version}-${linux_arch}"
 mysql_targz_name="${mysql_name_dir}.tar.gz"
 # for example mysql-5.7.40-linux-glibc2.12-x86_64.tar.gz
+
+
+
+
+
 echo "mysql-5.7.40-linux-glibc2.12-x86_64.tar.gz"
 echo "$mysql_targz_name"
 mysql_md5='ce0ef7b9712597f44f4ce9b9d7414a24'
-
+packages="libffi-devel wget gcc make zlib-devel openssl openssl-devel ncurses-devel openldap-devel gettext bzip2-devel xz-devel ncurses*"
 
 mysql_superuser="admin"
 mysql_superuser_password="admin"
-mysql_port=3306
+mysql_port=3307
 
 mysql_base_dir="/home/work/mysql_${mysql_port}"
 mysql_base_dir_sed=$(echo ${mysql_base_dir} | sed 's/\//\\\//g')
@@ -36,6 +41,50 @@ mysql_log_dir_sed=$(echo ${mysql_log_dir} | sed 's/\//\\\//g')
 
 mysql_tmp_dir="${mysql_base_dir}/tmp"
 mysql_tmp_dir_sed=$(echo ${mysql_tmp_dir} | sed 's/\//\\\//g')
+
+function yum_install_packages() {
+    # 将输入的软件包名称存储到数组中
+    packages=("$@")
+
+    installed=() # 存储已安装的软件包
+    not_found=() # 存储不存在的软件包
+    failed=()    # 存储安装失败的软件包
+
+    for pkg in "${packages[@]}"
+    do
+        if yum list installed "$pkg" > /dev/null 2>&1; then
+            installed+=("$pkg")
+            echo "$pkg already installed"
+        else
+            if yum list available "$pkg" > /dev/null 2>&1; then
+                yum install -y "$pkg"
+                if [ $? -eq 0 ]; then
+                    installed+=("$pkg")
+                    echo "$pkg installed successfully"
+                else
+                    failed+=("$pkg")
+                    echo "$pkg installation failed"
+                fi
+            else
+                not_found+=("$pkg")
+                echo "$pkg not found in any repository"
+            fi
+        fi
+    done
+    echo "=============================================="    
+    echo "Installed packages: ${installed[*]}"
+    echo "Not found packages: ${not_found[*]}"
+    echo "Failed packages: ${failed[*]}"
+    echo "=============================================="    
+
+    if [ ${#installed[@]} -eq ${#packages[@]} ]; then
+        return 0
+    else
+        #return 1
+        exit 1
+    fi
+}
+
 
 
 function user_add(){
@@ -61,10 +110,6 @@ function dir_add(){
 
 }
 
-function dep_install(){
-	yum -y install libffi-devel wget gcc make zlib-devel openssl openssl-devel ncurses-devel openldap-devel gettext bzip2-devel xz-devel ncurses*
-
-}
 
 function mysql_download(){
 	cd ${soft_dir}
@@ -81,11 +126,11 @@ function mysql_download(){
 			exit 2
 		fi
 	else
-		echo "download starting ...>>>"
-		wget https://dev.mysql.com/get/Downloads/MySQL-${mysql_main_version}/${mysql_targz_name}
+		echo "download starting ...>>>https://cdn.mysql.com/archives/mysql-8.0/mysql-boost-8.0.25.tar.gz"
+		wget -O mysql-8.0.25.tar.gz https://cdn.mysql.com/archives/mysql-8.0/mysql-boost-8.0.25.tar.gz
 
 	fi
-
+	echo "mysql_download is done"
 }
 
 
@@ -350,6 +395,7 @@ function mysql_init(){
 }
 
 function main(){
+	yum_install_packages $packages
 	user_add
 	dir_add
 	dep_install

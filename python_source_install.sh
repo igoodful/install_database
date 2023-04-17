@@ -1,6 +1,6 @@
 #!/bin/bash
 function init_env(){
-	python_version='3.9.10'
+	python_version='3.10.11'
 	python_basedir="/usr/local/python-${python_version}"
 	python_bindir="/usr/local/python-${python_version}/bin"
 
@@ -49,6 +49,7 @@ function ln_python(){
 
 
 function main(){
+	cd soft
 	init_env
 	init_dep
 	download_python

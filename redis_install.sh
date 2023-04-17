@@ -1,8 +1,9 @@
 #!/bin/bash
 linux_user='work'
 redis_version='7.0.10'
-redis_port=6381
+redis_port=6382
 redis_password='root'
+
 redis_basedir="/home/work/redis_${redis_port}"
 redis_datadir="${redis_basedir}/data"
 redis_logdir="${redis_basedir}/log"
@@ -69,4 +70,6 @@ aof-rewrite-incremental-fsync yes
 EOF
 chown -R ${linux_user}:${linux_user} ${redis_basedir}
 ${redis_bindir}/redis-server ${redis_confdir}/redis.conf  &
+echo "${redis_bindir}/redis-server ${redis_confdir}/redis.conf  &" > ${redis_basedir}/start.sh
+chmod a+x ${redis_basedir}/start.sh
 

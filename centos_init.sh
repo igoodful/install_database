@@ -32,7 +32,7 @@ function selinux_stop(){
 		sed -i '/^SELINUX=/c\SELINUX=disabled' /etc/selinux/config
 	else
 		echo "SELinux 关闭失败"
-		exit 1
+		echo "请单独检查"
 	fi
 
 
@@ -63,13 +63,15 @@ net.core.somaxconn=3276
 kernel.sem = 500 64000 100 128
 EOF
 sed -i '/^$/d' /etc/sysctl.conf
+sed -i '/^#/d' /etc/sysctl.conf
 
 sysctl -p
 
 }
 
 function limits_conf_update(){
-	cat /etc/security/limits.conf /etc/security/limits.conf.${init_time}
+echo "limits_conf_update"
+	cp /etc/security/limits.conf /etc/security/limits.conf.${init_time}
 	sed -i '/^soft.*nofile/d' /etc/security/limits.conf
 	sed -i '/^soft.*nproc/d' /etc/security/limits.conf
 	sed -i '/^hard.*nofile/d' /etc/security/limits.conf
@@ -81,7 +83,8 @@ soft nproc 204800
 hard nproc 204800
 EOF
 sed -i '/^$/d' /etc/security/limits.conf
-
+sed -i '/^#/d' /etc/security/limits.conf
+cat /etc/security/limits.conf
 }
 
 function date_update(){
@@ -89,19 +92,24 @@ function date_update(){
 	if [ $? == 0  ];then
 		echo ""
 	else
-
+echo ""
 	fi
 
 }
 
 function ntpd_start(){
-
+echo ""
 
 }
 
 
 function main(){
-
+yum_update
+firewalld_stop
+selinux_stop
+sysctl_conf_update
+limits_conf_update
+date_update
 
 }
 
