@@ -40,18 +40,11 @@ function selinux_stop(){
 
 function sysctl_conf_update(){
 	cp /etc/sysctl.conf /etc/sysctl.conf.${init_time}
-	sed -i '/vm.swappiness/d'
-	sed -i '/fs.aio-max-nr/d'
-	sed -i '/s.file-max/d'
-	sed -i '/net.ipv4.ip_local_port_range/d'
-	sed -i '/et.core.rmem_default/d'
-	sed -i '/net.core.rmem_max/d'
-	sed -i '/net.core.wmem_default/d'
-	sed -i '/net.core.wmem_max/d'
-	sed -i '/net.core.somaxconn/d'
-	sed -i '/kernel.sem/d'
-	cat >> /etc/sysctl.conf << EOF
+	cat > /etc/sysctl.conf << EOF
 vm.swappiness=10
+# 开启IP虚拟转发
+net.ipv4.ip_nonlocal_bind=1
+net.ipv4.ip_forward=1
 fs.aio-max-nr = 1048576
 fs.file-max = 6815744
 net.ipv4.ip_local_port_range = 9000 65500
@@ -62,8 +55,6 @@ net.core.wmem_max = 1048586
 net.core.somaxconn=3276
 kernel.sem = 500 64000 100 128
 EOF
-sed -i '/^$/d' /etc/sysctl.conf
-sed -i '/^#/d' /etc/sysctl.conf
 
 sysctl -p
 
@@ -101,6 +92,26 @@ function ntpd_start(){
 echo ""
 
 }
+
+function keepalived_install(){
+yum -y install kernel-devel openssl-devel popt-devel libnfnetlink-devel libnl libnl-devel 
+# xiazaikeepalived-1.4.4.tar.gz
+tar zxvf keepalived-1.4.4.tar.gz
+cd keepalived-1.4.4
+./configure --prefix=/usr/local/keepalived/   --sysconf=/etc
+make && make install
+#centos 7 注册系统服务并启动keepalived
+systemctl daemon-reload
+systemctl start keepalived ##暂时不要启动
+systemctl enable keepalived
+#配置开机启动
+chkconfig --add keepalived
+chkconfig --level 345 keepalived on
+service keepalived start
+##配置注释KillMode=process进程:KillMode=process #表示只杀掉程序的主进程，打开的子进程不管。我们keepalived肯定要全部杀掉。所以注释掉这一行。
+sed -i '/KillMode/d' /lib/systemd/system/keepalived.service  
+}
+
 
 
 function main(){

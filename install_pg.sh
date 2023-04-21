@@ -102,6 +102,57 @@ function build_and_install() {
     chmod 700 "$install_dir/tmp"
 }
 
+function init(){
+$install_dir/bin/initdb -D $install_dir/data
+
+}
+function conf_update(){
+# 新建配置文件
+cat >$install_dir/data/postgresql.conf<<EOF
+
+listen_addresses = '*' 
+max_connections = 10240 
+shared_buffers = 2048MB
+dynamic_shared_memory_type = posix
+wal_level = replica
+fsync = on
+wal_sync_method = fsync
+max_wal_size = 1GB
+min_wal_size = 80MB
+archive_mode = on
+archive_command = 'DIR="/data/postgresql/data_5432/archive/";(test -d $DIR || mkdir -p $DIR)&& cp %p $DIR/%f;find $DIR/* -mmin +360 -exec rm -rf {} \\;' # command to use to archive a logfile segment
+archive_cleanup_command = 'pg_archivecleanup /data/postgresql/data_5432/pg_wal %r' 
+recovery_target_timeline = 'latest' 
+max_wal_senders = 4 
+wal_keep_segments = 300 
+synchronous_standby_names = 'myapp' 
+##仅在从节点开启，postgresql.auto.conf文件参数优先级高于此处参数优先级
+#primary_conninfo = 'application_name=myapp user=repuser password=repl_pwd host=192.168.59.21 port=5432 sslmode=disable sslcompression=0 gssencmode=disable krbsrvname=postgres target_session_attrs=any' 
+hot_standby = on 
+hot_standby_feedback = on
+logging_collector = on
+log_directory = 'log'
+log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log' 
+log_file_mode = 0600 
+log_timezone = 'PRC'
+datestyle = 'iso, mdy'
+timezone = 'PRC'
+lc_messages = 'en_US.utf8' 
+lc_monetary = 'en_US.utf8' 
+lc_numeric = 'en_US.utf8' 
+lc_time = 'en_US.utf8' 
+default_text_search_config = 'pg_catalog.english'
+EOF
+echo "==================="
+cat > postgresql.auto.conf<<EOF
+primary_conninfo = 'application_name=myapp user=repuser password=replpwd host=192.168.59.21 port=5432 sslmode=disable sslcompression=0 gssencmode=disable krbsrvname=postgres target_session_attrs=any' 
+
+EOF
+# pg_controldata | grep 'Database cluster state' # 查看主备角色状态
+}
+
+
+
 # 主程序
 function main() {
     local version=$1
