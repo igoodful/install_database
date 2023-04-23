@@ -1,11 +1,13 @@
 #!/bin/bash
 init_time=$(date '+%Y%m%d%H%M%S')
-
+packages="perl-ExtUtils-MakeMaker perl-CPAN"
 
 
 function yum_update(){
 	yum clean all
 	yum makecache
+	yum -y install https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+	yum -y erase mariadb mariadb-server mariadb-libs mariadb-devel
 
 
 }
