@@ -8,3 +8,4 @@ cd sysbench-1.0.20/
  ./configure
 make -j 4
 make install
+# ls -l /usr/local/share/sysbench
