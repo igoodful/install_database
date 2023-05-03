@@ -7,6 +7,8 @@ function yum_update(){
 	yum clean all
 	yum makecache
 	yum -y install https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+	yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+	yum -y install https://rpms.remirepo.net/enterprise/remi-release-8.rpm
 	yum -y erase mariadb mariadb-server mariadb-libs mariadb-devel
 
 

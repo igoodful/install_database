@@ -1,4 +1,12 @@
 #!/bin/bash
+echo "GCC 7.1+"
+echo "make 3.75+"
+echo "Boost C++"
+echo "ncurses "
+echo "bison 2.1+ 尽可能使用最新版本的bison"
+echo " OpenSSL 1.0.1+"
+echo "/usr/local/mysql"
+
 soft_dir='/home/work/tmp'
 install_time=$(date  '+%Y%m%d%H%M%S')
 install_log="${soft_dir}/${install_time}.log"
