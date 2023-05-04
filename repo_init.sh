@@ -4,7 +4,7 @@ pg_packages="perl-ExtUtils-Embed pam-devel libxml2-devel libxslt-devel openldap-
 toolkit_packages="perl-TermReadKey perl-ExtUtils-MakeMaker perl-CPAN  perl-DBI perl-DBD-MySQL perl-Time-HiRes perl-IO-Socket-SSL perl-Digest-MD5"
 xtrabackup_packages="centos-release-scl scl-utils-build devtoolset-8-toolchain devtoolset-9-toolchain devtoolset-10-toolchain devtoolset-11-toolchain cmake cmake3 gcc gcc-c++ automake autoconf bison libtool vim-common python-sphinx libaio libaio-devel ncurses ncurses-devel libgcrypt-devel libev-devel libcurl-devel libgpg-error-devel libidn-devel perl-DBD-MySQL qpress"
 php_packages="libxml2 libxml2-devel openssl openssl-devel libmcrypt libmcrypt-devel libicu libicu-devel zlib zlib-devel curl curl-devel libcurl libcurl-devel bzip2 bzip2-devel libjpeg libjpeg-devel libpng libpng-devel freetype freetype-devel gmp gmp-devel readline readline-devel  libxslt libxslt-devel  glibc glibc-devel  glib2 glib2-devel xmlrpc-c xmlrpc-c-devel ncurses ncurses-devel net-snmp net-snmp-devel openldap openldap-devel oniguruma oniguruma-devel  krb5 krb5-devel gettext gettext-devel gettext-common-devel  GeoIP GeoIP-devel GeoIP-data trousers-devel e2fsprogs-devel uuid-devel libuuid-devel libffi-devel libXpm-devel postgresql-devel ImageMagick-devel  sqlite-devel gdbm-devel db4-devel libX11-devel gd-devel expat-devel  libmemcached-devel autoconf gcc gcc-c++ php-mcrypt  icu fontconfig libtool libtool-libs  perl gperftools libblkid-devel libudev-devel fuse-devel libedit-devel libatomic_ops-devel"
-normal_packages="kernel-devel stress"
+normal_packages="kernel-devel stress iotop"
 function yum_install_packages() {
 	# 将输入的软件包名称存储到数组中
 	packages=("$@")
