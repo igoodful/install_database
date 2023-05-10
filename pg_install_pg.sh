@@ -1,7 +1,7 @@
 #!/bin/bash
 pg_version='15.2'
 linux_user="work"
-port=5435
+port=5436
 install_dir="/home/${linux_user}/pg_${port}"
 packages="gcc make zlib zlib-devel readline readline-devel openssl openssl-devel pam pam-devel lz4 lz4-devel tcl tcl-devel libxslt libxslt-devel libxml2 libxml2-devel perl-ExtUtils-Embed python-devel python3-devel systemtap-sdt-devel.x86_64"
 
@@ -45,6 +45,7 @@ function yum_install_packages() {
 		#return 1
 		exit 1
 	fi
+	echo "======="
 }
 
 function check() {
@@ -73,6 +74,7 @@ function check() {
 		echo "current user is not root"
 		exit 1
 	fi
+	echo "======="
 
 }
 
@@ -92,6 +94,7 @@ function download_and_extract() {
 
 	# 解压源码包
 	tar -xf "$filename"
+	echo "======="
 }
 
 # 编译并安装 PostgreSQL
@@ -102,7 +105,7 @@ function build_and_install() {
 
 	# 配置并编译
 	echo "正在配置..."
-	./configure --prefix="$install_dir" --with-pgport=$port --with-perl --with-python3 --with-tcl --with-openssl --with-pam --with-ldap --with-libxml --with-libxslt
+	./configure --prefix="$install_dir" --with-pgport=$port --with-perl --with-python3 --with-tcl --with-openssl --with-pam --with-ldap --with-libxml --with-libxslt --with-lz4 --with-gssapi 
 	if [ "$?" == "0" ]; then
 		echo "正在编译..."
 		make
@@ -135,6 +138,7 @@ function build_and_install() {
 	mkdir -p "$install_dir/tmp"
 	chown $linux_user:$linux_user "$install_dir/tmp"
 	chmod 700 "$install_dir/tmp"
+	echo "======="
 }
 
 function init() {
@@ -144,6 +148,7 @@ function init() {
 		echo "$install_dir/bin/initdb is not exists"
 		exit 1
 	fi
+	echo "======="
 }
 function conf_update() {
 	mem_total=$(free -g | grep Mem | awk '{print $2}')
@@ -167,7 +172,7 @@ wal_sync_method = fsync
 max_wal_size = ${max_wal_size}GB
 min_wal_size = 1GB
 archive_mode = on
-#archive_command = 'DIR="/data/postgresql/data_5432/archive/";(test -d $DIR || mkdir -p $DIR)&& cp %p $DIR/%f;find $DIR/* -mmin +360 -exec rm -rf {} \\;' # command to use to archive a logfile segment
+archive_command = 'archive_dir="$install_dir/archive";(test -d \${archive_dir} || mkdir -p \${archive_dir}) && cp %p \${archive_dir}/%f;'
 #archive_cleanup_command = 'pg_archivecleanup /data/postgresql/data_5432/pg_wal %r' 
 recovery_target_timeline = 'latest' 
 max_wal_senders = 64 
@@ -231,6 +236,7 @@ EOF
 		exit 1
 	fi
 	chown -R $linux_user:$linux_user $install_dir
+	echo "======="
 	# pg_controldata | grep 'Database cluster state' # 查看主备角色状态
 }
 
@@ -246,12 +252,13 @@ function start() {
 		fi
 
 	else
-		echo "$install_dir/bin/pgctl is not exists"
+		echo "$install_dir/bin/pg_ctl is not exists"
 		exit 1
 	fi
+	echo "======="
 
 }
-# /home/work/pg_5434/bin/pg_ctl -D /home/work/pg_5434/data -l logfile start
+
 # 主程序
 function main() {
 	check
@@ -261,6 +268,7 @@ function main() {
 	init
 	conf_update
 	start
+	echo "======="
 }
 
 # 示例用法

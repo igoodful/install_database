@@ -72,7 +72,7 @@ function install_python(){
 	echo "install_python ..."
 	tar -xvJf Python-${python_version}.tar.xz
 	cd Python-${python_version}
-	./configure --prefix=${python_basedir}
+	./configure --prefix=${python_basedir} --with-ssl
 	make
 	make install
 	${python_bindir}/python3 -V

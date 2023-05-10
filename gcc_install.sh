@@ -12,4 +12,4 @@ function gcc_install() {
 
 }
 
-gcc_install 11
+gcc_install 8
