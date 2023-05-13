@@ -118,6 +118,12 @@ EOF
 	source /etc/rc.local
 }
 
+function update_profile(){
+sed -i '/LANG/d' /etc/profile
+echo 'LANG=en_US.UTF-8' >>/etc/profile
+source /etc/profile
+}
+
 function date_update() {
 	date -R | grep '+0800'
 	if [ $? == 0 ]; then
