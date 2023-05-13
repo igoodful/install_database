@@ -1,7 +1,7 @@
 #!/bin/bash
 pg_version='15.2'
 linux_user="work"
-port=5436
+port=5432
 install_dir="/home/${linux_user}/pg_${port}"
 packages="gcc make zlib zlib-devel readline readline-devel openssl openssl-devel pam pam-devel lz4 lz4-devel tcl tcl-devel libxslt libxslt-devel libxml2 libxml2-devel perl-ExtUtils-Embed python-devel python3-devel systemtap-sdt-devel.x86_64"
 
@@ -74,6 +74,14 @@ function check() {
 		echo "current user is not root"
 		exit 1
 	fi
+	if [ -x $install_dir ]; then
+		if [ -d $install_dir/data ]; then
+			echo "$install_dir/data exists"
+			exit 1
+		fi
+	else
+		mkdir -p $install_dir
+	fi
 	echo "======="
 
 }
@@ -105,7 +113,7 @@ function build_and_install() {
 
 	# 配置并编译
 	echo "正在配置..."
-	./configure --prefix="$install_dir" --with-pgport=$port --with-perl --with-python3 --with-tcl --with-openssl --with-pam --with-ldap --with-libxml --with-libxslt --with-lz4 --with-gssapi 
+	./configure --prefix="$install_dir" --with-pgport=$port --with-perl --with-python3 --with-tcl --with-openssl --with-pam --with-ldap --with-libxml --with-libxslt --with-lz4 --with-gssapi
 	if [ "$?" == "0" ]; then
 		echo "正在编译..."
 		make
@@ -241,7 +249,7 @@ EOF
 }
 
 function start() {
-	if [ -f $install_dir/bin/pgctl ]; then
+	if [ -f $install_dir/bin/pg_ctl ]; then
 		su - $linux_user -c "$install_dir/bin/pg_ctl -D $install_dir/data  start"
 		lsof -i:$port
 		if [ "$?" == "0" ]; then

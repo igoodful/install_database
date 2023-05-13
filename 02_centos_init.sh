@@ -1,15 +1,41 @@
 #!/bin/bash
 init_time=$(date '+%Y%m%d%H%M%S')
-packages="perl-ExtUtils-MakeMaker perl-CPAN"
+systemctl set-default multi-user.target
 
 function yum_update() {
+	if [ -f /etc/yum.repos.d/proxysql.repo ]; then
+		echo "exits"
+	else
+		cat >/etc/yum.repos.d/proxysql.repo <<EOF
+[proxysql]
+name=ProxySQL YUM repository
+baseurl=https://repo.proxysql.com/ProxySQL/proxysql-2.4.x/centos/\$releasever
+gpgcheck=1
+gpgkey=https://repo.proxysql.com/ProxySQL/proxysql-2.4.x/repo_pub_key
+EOF
+	fi
+	yum -y update
+
+	yum -y install epel-release
+	yum -y install https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+	yum -y erase mariadb mariadb-server mariadb-libs mariadb-devel
 	yum clean all
 	yum makecache
-	yum -y install https://repo.percona.com/yum/percona-release-latest.noarch.rpm
-	yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-	yum -y install https://rpms.remirepo.net/enterprise/remi-release-8.rpm
-	yum -y erase mariadb mariadb-server mariadb-libs mariadb-devel
 
+}
+
+function git_upgrade() {
+	yum -y remove git
+	rpm -ivh http://opensource.wandisco.com/centos/7/git/x86_64/wandisco-git-release-7-1.noarch.rpm
+	yum -y install git
+	git --version
+	if [ $? -ne 0 ]; then
+		echo "git install error"
+		exit 1
+	fi
+	git config --global user.name "igoodful"
+	git config --global user.email "igoodful@qq.com"
+	git config --global init.defaultBranch main
 }
 
 function firewalld_stop() {
@@ -34,6 +60,7 @@ function selinux_stop() {
 	else
 		echo "SELinux 关闭失败"
 		echo "请单独检查"
+		sed -i '/^SELINUX=/c\SELINUX=disabled' /etc/selinux/config
 	fi
 
 }
@@ -64,18 +91,16 @@ EOF
 function limits_conf_update() {
 	echo "limits_conf_update"
 	cp /etc/security/limits.conf /etc/security/limits.conf.${init_time}
-	sed -i '/^soft.*nofile/d' /etc/security/limits.conf
-	sed -i '/^soft.*nproc/d' /etc/security/limits.conf
-	sed -i '/^hard.*nofile/d' /etc/security/limits.conf
-	sed -i '/^hard.*nproc/d' /etc/security/limits.conf
-	cat >>/etc/security/limits.conf <<EOF
-soft nofile 204800
-hard nofile 204800
-soft nproc 204800
-hard nproc 204800
+	cat >/etc/security/limits.conf <<EOF
+* soft    nofile  1024000
+* hard    nofile  1024000
+* soft    nproc   unlimited
+* hard    nproc   unlimited
+* soft    core    unlimited
+* hard    core    unlimited
+* soft    memlock unlimited
+* hard    memlock unlimited
 EOF
-	sed -i '/^$/d' /etc/security/limits.conf
-	sed -i '/^#/d' /etc/security/limits.conf
 	cat /etc/security/limits.conf
 }
 
@@ -84,8 +109,8 @@ function somaxconn_update() {
 }
 
 function rc_local_update() {
-        sed -i '/^$/d' /etc/rc.local
-        sed -i '/^#/d' /etc/rc.local
+	sed -i '/^$/d' /etc/rc.local
+	sed -i '/^#/d' /etc/rc.local
 	sed -i '/transparent_hugepage/d' /etc/rc.local
 	cat >>/etc/rc.local <<EOF
 echo madvise > /sys/kernel/mm/transparent_hugepage/enabled
@@ -129,6 +154,7 @@ function keepalived_install() {
 
 function main() {
 	yum_update
+	git_upgrade
 	firewalld_stop
 	selinux_stop
 	sysctl_conf_update
@@ -138,5 +164,9 @@ function main() {
 	date_update
 
 }
-
-main
+if [ "$1" == '-p' ]; then
+	echo "cmake version list: "
+	curl https://cmake.org/files/ 2>&1 | grep 'href=' | awk -F'"' '{print $8}' | grep '^v' | grep -v vCVS | awk -F'/' '{print $1}'
+else
+	main
+fi

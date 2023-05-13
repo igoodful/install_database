@@ -1,1 +1,0 @@
-archive_command = 'archive_dir="/home/work/archive";(test -d ${archive_dir} || mkdir -p ${archive_dir}) && cp %p ${archive_dir}/%f;'
