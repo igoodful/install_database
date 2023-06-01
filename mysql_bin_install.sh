@@ -156,6 +156,9 @@ function mysql_install(){
 
 function my_cnf_update(){
 	echo "my_cnf_update  is running ..."
+	mem_total=$(free  |grep Mem |awk '{print $2}')
+	tmp_table_size=mem_total*0.2
+	max_heap_table_size=$tmp_table_size
 	cat > ${mysql_conf_dir}/my.cnf << EOF
 [client]
 port = ${mysql_port}
