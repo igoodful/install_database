@@ -131,6 +131,8 @@ function date_update() {
 	else
 		echo ""
 	fi
+	rm -rf /etc/localtime
+	In -s /usr/share/zoneinfo/Asia/shanghai /etc/localtime
 
 }
 
