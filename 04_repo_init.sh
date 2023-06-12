@@ -13,7 +13,7 @@ pg_packages="lz4 lz4-devel python python-devel python3 python3-devel openldap op
 
 basic_packages="gcc gcc-c++ make cmake cmake3 automake autoconf flex ntp lrzsz stress iotop dstat sysstat tk tk-devel  kernel-devel coreutils"
 
-others=" xfsprogs smartmontools openjade"
+others=" xfsprogs smartmontools openjade qperf"
 
 no_packages="mpstat krb5 libjpeg libjpeg-devel curl-devel db4-devel libudev-devel libtool-libs e4fsprogs jadetex"
 
