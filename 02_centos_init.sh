@@ -158,6 +158,18 @@ function keepalived_install() {
 	sed -i '/KillMode/d' /lib/systemd/system/keepalived.service
 }
 
+function update_hosts(){
+hostnamectl set-hostname igoodful
+cat > /etc/hosts<<EOF
+127.0.8.1 localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1 localhost localhost.localdomain localhost6 localhost6.localdomain6
+GDB02-DB81 192.168.119.39
+GDB82-DB82 192.168.119.49
+GDB02-DB83 192.168.119.41
+
+EOF
+}
+
 function main() {
 	yum_update
 	git_upgrade
