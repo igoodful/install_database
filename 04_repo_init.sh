@@ -11,7 +11,7 @@ php_packages="libxml2 libxml2-devel openssl openssl-devel openssl11 openssl11-de
 
 pg_packages="lz4 lz4-devel python python-devel python3 python3-devel openldap openldap-devel tcl tcl-devel libxslt libxslt-devel libxml2 libxml2-devel pam pam-devel openssl openssl-devel zlib zlib-devel readline readline-devel perl-ExtUtils-Embed systemtap-sdt-devel.x86_64  "
 
-basic_packages="gcc gcc-c++ make cmake cmake3 automake autoconf flex ntp lrzsz stress iotop dstat sysstat tk tk-devel  kernel-devel coreutils"
+basic_packages="gcc gcc-c++ make cmake cmake3 automake autoconf flex ntp lrzsz stress iotop dstat sysstat tk tk-devel  kernel-devel coreutils jemalloc-devel"
 
 others=" xfsprogs smartmontools openjade qperf"
 
