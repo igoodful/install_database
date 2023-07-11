@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "centos    version: $(cat /etc/redhat-release |awk '{print $4}')"
-echo "arch         type: $(file /bin/bash |awk  '{print $6}' |awk -F',' '{print $1}')"
+echo "arch         type: $(file /bin/bash |awk -F',' '{print $2}')"
 echo "cpu         cores: $(cat /proc/cpuinfo |grep processor |wc -l)"
 echo "mem        sizeGB: $(free -h |grep Mem |awk '{print $2}')"
 echo "swap       sizeGB: $(free -h |grep Swap |awk '{print $2}')"
