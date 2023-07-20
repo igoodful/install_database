@@ -137,6 +137,12 @@ function date_update() {
 }
 
 function ntpd_start() {
+	yum -y install chrony pciutils jq sshpass socat bind-utils net-tools ntpdate
+	systemctl enable chronyd.service
+	systemctl start chronyd.service
+	sed -i -e '/^server/s/^/#/' -e '1a server ntp.aliyun.com iburst'
+	/etc/chrony.conf
+	systemctl restart chronyd.service
 	echo ""
 
 }
