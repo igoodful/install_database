@@ -55,7 +55,7 @@ function gcc_install() {
 }
 
 function main() {
-	gcc_install 8
+	gcc_install 9
 }
 
 main

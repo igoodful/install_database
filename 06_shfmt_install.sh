@@ -8,7 +8,7 @@ function install() {
 	cd sh
 	go install mvdan.cc/sh/v3/cmd/shfmt@latest
 	cd cmd/shfmt/
-	go bulid
+	go build
 	if [ -f /usr/bin/shfmt ]; then
 		echo "/usr/bin/shfmt exists"
 	else
