@@ -1,5 +1,6 @@
 #!/bin/bash
-node_version='14.8.0'
+node_version='17.8.0'
+node_version='17.8.0'
 node_package_dir="node-v${node_version}-linux-x64"
 node_package_targz="${node_package_dir}.tar.gz"
 install_dir="/data/node-${node_version}"
