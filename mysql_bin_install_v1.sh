@@ -8,7 +8,7 @@ echo " OpenSSL 1.0.1+"
 echo "/usr/local/mysql"
 
 soft_dir='/home/work/tmp'
-install_time=$(date  '+%Y%m%d%H%M%S')
+install_time=$(date '+%Y%m%d%H%M%S')
 install_log="${soft_dir}/${install_time}.log"
 tmp_password=''
 linux_user='work'
@@ -21,10 +21,6 @@ linux_arch='x86_64'
 mysql_name_dir="mysql-${mysql_version}-linux-glibc${mysql_glibc_version}-${linux_arch}"
 mysql_targz_name="${mysql_name_dir}.tar.gz"
 # for example mysql-5.7.40-linux-glibc2.12-x86_64.tar.gz
-
-
-
-
 
 echo "mysql-5.7.40-linux-glibc2.12-x86_64.tar.gz"
 echo "$mysql_targz_name"
@@ -51,115 +47,106 @@ mysql_tmp_dir="${mysql_base_dir}/tmp"
 mysql_tmp_dir_sed=$(echo ${mysql_tmp_dir} | sed 's/\//\\\//g')
 
 function yum_install_packages() {
-    # 将输入的软件包名称存储到数组中
-    packages=("$@")
+        # 将输入的软件包名称存储到数组中
+        packages=("$@")
 
-    installed=() # 存储已安装的软件包
-    not_found=() # 存储不存在的软件包
-    failed=()    # 存储安装失败的软件包
+        installed=() # 存储已安装的软件包
+        not_found=() # 存储不存在的软件包
+        failed=()    # 存储安装失败的软件包
 
-    for pkg in "${packages[@]}"
-    do
-        if yum list installed "$pkg" > /dev/null 2>&1; then
-            installed+=("$pkg")
-            echo "$pkg already installed"
-        else
-            if yum list available "$pkg" > /dev/null 2>&1; then
-                yum install -y "$pkg"
-                if [ $? -eq 0 ]; then
-                    installed+=("$pkg")
-                    echo "$pkg installed successfully"
+        for pkg in "${packages[@]}"; do
+                if yum list installed "$pkg" >/dev/null 2>&1; then
+                        installed+=("$pkg")
+                        echo "$pkg already installed"
                 else
-                    failed+=("$pkg")
-                    echo "$pkg installation failed"
+                        if yum list available "$pkg" >/dev/null 2>&1; then
+                                yum install -y "$pkg"
+                                if [ $? -eq 0 ]; then
+                                        installed+=("$pkg")
+                                        echo "$pkg installed successfully"
+                                else
+                                        failed+=("$pkg")
+                                        echo "$pkg installation failed"
+                                fi
+                        else
+                                not_found+=("$pkg")
+                                echo "$pkg not found in any repository"
+                        fi
                 fi
-            else
-                not_found+=("$pkg")
-                echo "$pkg not found in any repository"
-            fi
+        done
+        echo "=============================================="
+        echo "Installed packages: ${installed[*]}"
+        echo "Not found packages: ${not_found[*]}"
+        echo "Failed packages: ${failed[*]}"
+        echo "=============================================="
+
+        if [ ${#installed[@]} -eq ${#packages[@]} ]; then
+                return 0
+        else
+                #return 1
+                exit 1
         fi
-    done
-    echo "=============================================="
-    echo "Installed packages: ${installed[*]}"
-    echo "Not found packages: ${not_found[*]}"
-    echo "Failed packages: ${failed[*]}"
-    echo "=============================================="
-
-    if [ ${#installed[@]} -eq ${#packages[@]} ]; then
-        return 0
-    else
-        #return 1
-        exit 1
-    fi
 }
 
+function user_add() {
+        echo "create user ... "
+        cat /etc/passwd | awk -F':' '{print $1}' | grep "${linux_user}"
+        if [ $? == 0 ]; then
+                echo "$linux_user exists ..."
+        else
+                useradd ${linux_user}
+                echo ${linux_user}:${linux_password} | chpasswd
 
-
-function user_add(){
-	echo "create user ... "
-	cat /etc/passwd  |awk -F':' '{print $1}' |grep "${linux_user}"
-	if [ $? == 0 ]
-	then
-		echo "$linux_user exists ..."
-	else
-		useradd ${linux_user}
-		echo ${linux_user}:${linux_password}|chpasswd
-
-	fi
-	echo "create user done"
+        fi
+        echo "create user done"
 
 }
 
-function dir_add(){
-	mkdir -p ${mysql_base_dir}
-	mkdir -p ${mysql_base_dir}/{log,conf,tmp,data}
-	mkdir -p ${soft_dir}
-	cd ${soft_dir}
+function dir_add() {
+        mkdir -p ${mysql_base_dir}
+        mkdir -p ${mysql_base_dir}/{log,conf,tmp,data}
+        mkdir -p ${soft_dir}
+        cd ${soft_dir}
 
 }
 
+function mysql_download() {
+        cd ${soft_dir}
+        if [ -f "${soft_dir}/${mysql_targz_name}" ]; then
+                echo "${soft_dir}/${mysql_targz_name}   exists ..."
+                md5_tmp=$(md5sum ${soft_dir}/${mysql_targz_name} | awk '{print $1}')
+                if [ "$md5_tmp" == "$mysql_md5" ]; then
+                        echo "download is done ..."
+                else
+                        mv ${soft_dir}/mysql-${mysql_version}.tar.gz ${soft_dir}/mysql-${mysql_version}.tar.gz.$install_time
+                        echo "${soft_dir}/${mysql_targz_name} is bad"
+                        exit 2
+                fi
+        else
+                echo "download starting ...>>>https://cdn.mysql.com/archives/mysql-8.0/mysql-boost-8.0.25.tar.gz"
+                wget -O mysql-8.0.25.tar.gz https://cdn.mysql.com/archives/mysql-8.0/mysql-boost-8.0.25.tar.gz
 
-function mysql_download(){
-	cd ${soft_dir}
-	if [ -f "${soft_dir}/${mysql_targz_name}" ]
-	then
-		echo "${soft_dir}/${mysql_targz_name}   exists ..."
-		md5_tmp=$(md5sum ${soft_dir}/${mysql_targz_name} |awk '{print $1}')
-		if [ "$md5_tmp" == "$mysql_md5" ]
-		then
-			echo "download is done ..."
-		else
-			mv ${soft_dir}/mysql-${mysql_version}.tar.gz ${soft_dir}/mysql-${mysql_version}.tar.gz.$install_time
-			echo "${soft_dir}/${mysql_targz_name} is bad"
-			exit 2
-		fi
-	else
-		echo "download starting ...>>>https://cdn.mysql.com/archives/mysql-8.0/mysql-boost-8.0.25.tar.gz"
-		wget -O mysql-8.0.25.tar.gz https://cdn.mysql.com/archives/mysql-8.0/mysql-boost-8.0.25.tar.gz
-
-	fi
-	echo "mysql_download is done"
+        fi
+        echo "mysql_download is done"
 }
 
-
-
-function mysql_install(){
-	echo " is mysqld --initialize   ;but is not mysqld --initialize-insecure"
-	cd ${soft_dir}
-	tar -xzvf ${mysql_targz_name}
-	mv ${mysql_name_dir}/* ${mysql_base_dir}/
-	${mysql_base_dir}/bin/mysqld --initialize --user=${linux_user} --basedir=${mysql_base_dir} --datadir=${mysql_base_dir}/data >> ${install_log} 2>&1
-	tmp_password=$(cat ${install_log} |grep 'root@localhost:' |awk -F'root@localhost: ' '{print $2}')
-	echo "tmp_password is :${tmp_password}"
+function mysql_install() {
+        echo " is mysqld --initialize   ;but is not mysqld --initialize-insecure"
+        cd ${soft_dir}
+        tar -xzvf ${mysql_targz_name}
+        mv ${mysql_name_dir}/* ${mysql_base_dir}/
+        ${mysql_base_dir}/bin/mysqld --initialize --user=${linux_user} --basedir=${mysql_base_dir} --datadir=${mysql_base_dir}/data >>${install_log} 2>&1
+        tmp_password=$(cat ${install_log} | grep 'root@localhost:' | awk -F'root@localhost: ' '{print $2}')
+        echo "tmp_password is :${tmp_password}"
 
 }
 
-function my_cnf_update(){
-	echo "my_cnf_update  is running ..."
-	mem_total=$(free  |grep Mem |awk '{print $2}')
-	tmp_table_size=mem_total*0.2
-	max_heap_table_size=$tmp_table_size
-	cat > ${mysql_conf_dir}/my.cnf << EOF
+function my_cnf_update() {
+        echo "my_cnf_update  is running ..."
+        mem_total=$(free | grep Mem | awk '{print $2}')
+        tmp_table_size=mem_total*0.2
+        max_heap_table_size=$tmp_table_size
+        cat >${mysql_conf_dir}/my.cnf <<EOF
 [client]
 port = ${mysql_port}
 socket = ${mysql_tmp_dir}/mysql.sock
@@ -347,78 +334,71 @@ EOF
 
 }
 
-function mysql_server_update(){
-	echo "mysql_server_update is running ..."
-	mv ${mysql_base_dir}/support-files/mysql.server ${mysql_base_dir}/bin
-	cp ${mysql_base_dir}/bin/mysql.server ${mysql_base_dir}/bin/${install_time}.mysql.server.${install_time}
-	sed -i s/^basedir=.*/basedir=${mysql_base_dir_sed}/g ${mysql_base_dir}/bin/mysql.server
-	sed -i s/^datadir=.*/datadir=${mysql_data_dir_sed}/g ${mysql_base_dir}/bin/mysql.server
+function mysql_server_update() {
+        echo "mysql_server_update is running ..."
+        mv ${mysql_base_dir}/support-files/mysql.server ${mysql_base_dir}/bin
+        cp ${mysql_base_dir}/bin/mysql.server ${mysql_base_dir}/bin/${install_time}.mysql.server.${install_time}
+        sed -i s/^basedir=.*/basedir=${mysql_base_dir_sed}/g ${mysql_base_dir}/bin/mysql.server
+        sed -i s/^datadir=.*/datadir=${mysql_data_dir_sed}/g ${mysql_base_dir}/bin/mysql.server
 
-	echo "mysql_server_update is done"
+        echo "mysql_server_update is done"
 }
 
-function mysql_start(){
-	chown -R ${linux_user}:${linux_user} ${mysql_base_dir}
-	echo "mysql_start is running ..."
-	su - ${linux_user}
-	${mysql_bin_dir}/mysqld --defaults-file=${mysql_conf_dir}/my.cnf &
-	ps aux|grep mysqld
-	if [ "$?" == 0 ]
-	then
-		echo "mysql start success "
-	else
-		echo "mysql start failed "
-		exit 1
-	fi
+function mysql_start() {
+        chown -R ${linux_user}:${linux_user} ${mysql_base_dir}
+        echo "mysql_start is running ..."
+        su - ${linux_user}
+        ${mysql_bin_dir}/mysqld --defaults-file=${mysql_conf_dir}/my.cnf &
+        ps aux | grep mysqld
+        if [ "$?" == 0 ]; then
+                echo "mysql start success "
+        else
+                echo "mysql start failed "
+                exit 1
+        fi
 }
 
-function mysql_init(){
-	echo "mysql_init is running ..."
-	sleep 30
-	ls -l ${mysql_tmp_dir}
-	sleep 30
-	ls -l ${mysql_tmp_dir}
-	sleep 30
-	ls -l ${mysql_tmp_dir}
-	sleep 30
-	while true
-	do
-		ls -l ${mysql_tmp_dir} |grep 'mysql.sock'
-		if [ $? == 0 ]
-		then
-			break
-		fi
-		sleep 5
-	done
+function mysql_init() {
+        echo "mysql_init is running ..."
+        sleep 30
+        ls -l ${mysql_tmp_dir}
+        sleep 30
+        ls -l ${mysql_tmp_dir}
+        sleep 30
+        ls -l ${mysql_tmp_dir}
+        sleep 30
+        while true; do
+                ls -l ${mysql_tmp_dir} | grep 'mysql.sock'
+                if [ $? == 0 ]; then
+                        break
+                fi
+                sleep 5
+        done
 
-	echo $tmp_password
-	if [ -e "${mysql_tmp_dir}/mysql.sock" ]
-	then
-		tmp_password="'${tmp_password}'"
-		echo "${mysql_bin_dir}/mysql -e -uroot -P${mysql_port}  -S  ${mysql_tmp_dir}/mysql.sock -p${tmp_password}"
-		${mysql_bin_dir}/mysql -c -uroot -P${mysql_port}  -S  ${mysql_tmp_dir}/mysql.sock -p${tmp_password}  "alter user root@'localhost' identified by 'root';"
-		${mysql_bin_dir}/mysql -c -uroot -P${mysql_port}  -S  ${mysql_tmp_dir}/mysql.sock -proot  "create user admin@'%' identified by 'admin';grant all on *.* to admin@'%' with grant option;"
-	else
-		echo "${mysql_tmp_dir}/mysql.sock  not exists "
-		ls -l ${mysql_tmp_dir}
-		exit 4
-	fi
+        echo $tmp_password
+        if [ -e "${mysql_tmp_dir}/mysql.sock" ]; then
+                tmp_password="'${tmp_password}'"
+                echo "${mysql_bin_dir}/mysql -e -uroot -P${mysql_port}  -S  ${mysql_tmp_dir}/mysql.sock -p${tmp_password}"
+                ${mysql_bin_dir}/mysql -c -uroot -P${mysql_port} -S ${mysql_tmp_dir}/mysql.sock -p${tmp_password} "alter user root@'localhost' identified by 'root';"
+                ${mysql_bin_dir}/mysql -c -uroot -P${mysql_port} -S ${mysql_tmp_dir}/mysql.sock -proot "create user admin@'%' identified by 'admin';grant all on *.* to admin@'%' with grant option;"
+        else
+                echo "${mysql_tmp_dir}/mysql.sock  not exists "
+                ls -l ${mysql_tmp_dir}
+                exit 4
+        fi
 }
 
-function main(){
-	yum_install_packages $packages
-	user_add
-	dir_add
-	dep_install
-	mysql_download
-	mysql_install
-	my_cnf_update
-	mysql_server_update
-	mysql_start
-	mysql_init
+function main() {
+        yum_install_packages $packages
+        user_add
+        dir_add
+        dep_install
+        mysql_download
+        mysql_install
+        my_cnf_update
+        mysql_server_update
+        mysql_start
+        mysql_init
 
 }
 main
-
-
-

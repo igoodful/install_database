@@ -42,4 +42,4 @@ function yum_install_packages() {
         fi
 }
 
-yum_install_packages $*
+yum_install_packages "$*"

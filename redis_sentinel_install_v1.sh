@@ -10,30 +10,22 @@ redis_bindir=/home/work/redis_$redis_port/bin
 redis_logdir=/home/work/redis_$redis_port/log
 redis_tmpdir=/home/work/redis_$redis_port/tmp
 
-
-
-dir_add(){
-
-
-
+dir_add() {
+        echo 'dd'
 
 }
-
-
-
 
 ip addr add ${VIP}/${NETMASK} dev ${INTERFACE}
 # rpm -ivh tcl-8.5.13-8.el7.x86_64.rpm
 yum -y install tcl
 
-
-redis_install(){
-make PREFIX=$redis_basedir install
-make test
+redis_install() {
+        make PREFIX=$redis_basedir install
+        make test
 }
 
-conf_update(){
-cat > sentinel<<EOF
+conf_update() {
+        cat >sentinel <<EOF
 port 26379
 bind 0.0.0.0
 daemonize yes
@@ -45,19 +37,5 @@ sentinel monitor mymaster 192.168.1.203 6379 2
 sentinel down-after-milliseconds mymaster 20000
 sentinel auth-pass mymaster root
 EOF
-echo ""
+        echo ""
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

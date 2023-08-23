@@ -7,10 +7,12 @@ echo "bison 2.1+ 尽可能使用最新版本的bison"
 echo " OpenSSL 1.0.1+"
 echo "/usr/local/mysql"
 function repo() {
+        echo ''
 
 }
 
 function dowload_mysql() {
+        echo ''
 
 }
 

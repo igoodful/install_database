@@ -13,20 +13,18 @@ redis_bindir="${redis_basedir}/bin"
 mkdir -p ${redis_basedir}
 mkdir -p ${redis_basedir}/{data,conf,log,tmp}
 
-if [ -f "redis-${redis_version}.tar.gz" ]
-then
-	echo "redis-${redis_version}.tar.gz exists ..."
+if [ -f "redis-${redis_version}.tar.gz" ]; then
+        echo "redis-${redis_version}.tar.gz exists ..."
 else
-	wget https://download.redis.io/releases/redis-${redis_version}.tar.gz
+        wget https://download.redis.io/releases/redis-${redis_version}.tar.gz
 fi
 
-tar -xzvf  redis-${redis_version}.tar.gz
+tar -xzvf redis-${redis_version}.tar.gz
 cd redis-${redis_version}
 make
-make  PREFIX=${redis_basedir} install
+make PREFIX=${redis_basedir} install
 
-
-cat >${redis_confdir}/redis.conf  <<EOF
+cat >${redis_confdir}/redis.conf <<EOF
 daemonize yes
 pidfile ${redis_tmpdir}
 port ${redis_port}
@@ -69,7 +67,6 @@ hz 10
 aof-rewrite-incremental-fsync yes
 EOF
 chown -R ${linux_user}:${linux_user} ${redis_basedir}
-${redis_bindir}/redis-server ${redis_confdir}/redis.conf  &
-echo "${redis_bindir}/redis-server ${redis_confdir}/redis.conf  &" > ${redis_basedir}/start.sh
+${redis_bindir}/redis-server ${redis_confdir}/redis.conf &
+echo "${redis_bindir}/redis-server ${redis_confdir}/redis.conf  &" >${redis_basedir}/start.sh
 chmod a+x ${redis_basedir}/start.sh
-

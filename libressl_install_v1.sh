@@ -20,7 +20,7 @@ function install() {
                 exit 1
         fi
         tar -xzvf $libressl_file_tz
-        cd $libressl_file_dir
+        cd $libressl_file_dir || exit 1
         ./configure --prefix=/usr/local/libressl
         if [ $? -ne 0 ]; then
                 echo "./config error"
@@ -40,6 +40,7 @@ function install() {
 }
 
 function main() {
+        install
 
 }
 main
