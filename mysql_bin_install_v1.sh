@@ -106,12 +106,12 @@ function dir_add() {
         mkdir -p ${mysql_base_dir}
         mkdir -p ${mysql_base_dir}/{log,conf,tmp,data}
         mkdir -p ${soft_dir}
-        cd ${soft_dir}
+        cd ${soft_dir} || exit 1
 
 }
 
 function mysql_download() {
-        cd ${soft_dir}
+        cd ${soft_dir} || exit 1
         if [ -f "${soft_dir}/${mysql_targz_name}" ]; then
                 echo "${soft_dir}/${mysql_targz_name}   exists ..."
                 md5_tmp=$(md5sum ${soft_dir}/${mysql_targz_name} | awk '{print $1}')
@@ -132,7 +132,7 @@ function mysql_download() {
 
 function mysql_install() {
         echo " is mysqld --initialize   ;but is not mysqld --initialize-insecure"
-        cd ${soft_dir}
+        cd ${soft_dir} || exit 1
         tar -xzvf ${mysql_targz_name}
         mv ${mysql_name_dir}/* ${mysql_base_dir}/
         ${mysql_base_dir}/bin/mysqld --initialize --user=${linux_user} --basedir=${mysql_base_dir} --datadir=${mysql_base_dir}/data >>${install_log} 2>&1
