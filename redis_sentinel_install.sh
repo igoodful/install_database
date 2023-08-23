@@ -23,12 +23,12 @@ dir_add(){
 
 
 ip addr add ${VIP}/${NETMASK} dev ${INTERFACE}
-# rpm -ivh tcl-8.5.13-8.el7.x86_64.rpm 
-yum -y install tcl 
+# rpm -ivh tcl-8.5.13-8.el7.x86_64.rpm
+yum -y install tcl
 
 
 redis_install(){
-make PREFIX=$redis_basedir install 
+make PREFIX=$redis_basedir install
 make test
 }
 

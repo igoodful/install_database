@@ -22,7 +22,7 @@ fi
 
 tar -xzvf  redis-${redis_version}.tar.gz
 cd redis-${redis_version}
-make 
+make
 make  PREFIX=${redis_basedir} install
 
 

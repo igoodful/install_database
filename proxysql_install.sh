@@ -7,7 +7,7 @@ yum -y install perl-DBD-MySQL
 
 mysql -uadmin -padmin -h127.0.0.1 -P6032  -e "show databases;"
 #配置proxysql的应用连接账号
-insert into mysql_users(username,password,default_hostgroup) values ('test_wr','123456',1); 
+insert into mysql_users(username,password,default_hostgroup) values ('test_wr','123456',1);
 save mysql users to memory;
 #配置用于ProxySQL监控账号主要用来检测数据库端是否MYSQL是否正常
 grant select ,replication client on *.* to 'monitor'@'10.%' identified by '123456';
@@ -26,13 +26,13 @@ insert into mysql_query_rules(rule_id,active,match_digest,destination_hostgroup,
 
 #所有的参数修改变量必须要加到运行层面，同时要保存到disk中，否则proxysql重启后配置信息会丢失
 #针对mysql_users表
-load mysql users to run; 
+load mysql users to run;
 save mysql users to disk;
 #针对mysql_servers表
-load mysql servers to run; 
-save mysql servers to disk; 
+load mysql servers to run;
+save mysql servers to disk;
 #针对mysql_query_rules表
-load mysql query rules to run; 
+load mysql query rules to run;
 save mysql query rules to disk;
 #应用通过提供的VIP地址+端口访问连接数据库（6033）
 #应用app通过proxysql的mysql_users表验证用户名和密码，然后通过mysql_query_rules表的匹配规则进行流量分发到mysql server，若无法匹配则走默认组1的mysql server

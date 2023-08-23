@@ -20,56 +20,56 @@ others=" xfsprogs smartmontools openjade qperf"
 no_packages="mpstat krb5 libjpeg libjpeg-devel curl-devel db4-devel libudev-devel libtool-libs e4fsprogs jadetex"
 
 function yum_install_packages() {
-	# 将输入的软件包名称存储到数组中
-	packages=("$@")
+        # 将输入的软件包名称存储到数组中
+        packages=("$@")
 
-	installed=() # 存储已安装的软件包
-	not_found=() # 存储不存在的软件包
-	failed=()    # 存储安装失败的软件包
+        installed=() # 存储已安装的软件包
+        not_found=() # 存储不存在的软件包
+        failed=()    # 存储安装失败的软件包
 
-	for pkg in "${packages[@]}"; do
-		if yum list installed "$pkg" >/dev/null 2>&1; then
-			installed+=("$pkg")
-			echo "$pkg already installed"
-		else
-			if yum list available "$pkg" >/dev/null 2>&1; then
-				yum install -y "$pkg"
-				if [ $? -eq 0 ]; then
-					installed+=("$pkg")
-					echo "$pkg installed successfully"
-				else
-					failed+=("$pkg")
-					echo "$pkg installation failed"
-				fi
-			else
-				not_found+=("$pkg")
-				echo "$pkg not found in any repository"
-			fi
-		fi
-	done
-	echo -e "\033[49;31;1m ------------------------------------------------------>>\033[0m"
-	echo "Installed packages: ${installed[*]}"
-	echo "Not found packages: ${not_found[*]}"
-	echo "Failed packages: ${failed[*]}"
-	echo -e "\033[49;31;1m ------------------------------------------------------>>\033[0m"
+        for pkg in "${packages[@]}"; do
+                if yum list installed "$pkg" >/dev/null 2>&1; then
+                        installed+=("$pkg")
+                        echo "$pkg already installed"
+                else
+                        if yum list available "$pkg" >/dev/null 2>&1; then
+                                yum install -y "$pkg"
+                                if [ $? -eq 0 ]; then
+                                        installed+=("$pkg")
+                                        echo "$pkg installed successfully"
+                                else
+                                        failed+=("$pkg")
+                                        echo "$pkg installation failed"
+                                fi
+                        else
+                                not_found+=("$pkg")
+                                echo "$pkg not found in any repository"
+                        fi
+                fi
+        done
+        echo -e "\033[49;31;1m ------------------------------------------------------>>\033[0m"
+        echo "Installed packages: ${installed[*]}"
+        echo "Not found packages: ${not_found[*]}"
+        echo "Failed packages: ${failed[*]}"
+        echo -e "\033[49;31;1m ------------------------------------------------------>>\033[0m"
 
-	if [ ${#installed[@]} -eq ${#packages[@]} ]; then
-		return 0
-	else
-		#return 1
-		exit 1
-	fi
+        if [ ${#installed[@]} -eq ${#packages[@]} ]; then
+                return 0
+        else
+                #return 1
+                exit 1
+        fi
 }
 
 function main() {
-	yum_install_packages $basic_packages      #>>packages.log
-	yum_install_packages $toolkit_packages    #>packages.log
-	yum_install_packages $xtrabackup_packages #>>packages.log
-	yum_install_packages $mysql_oracle        #>>packages.log
-	yum_install_packages $php_packages        #>>packages.log
-	yum_install_packages $pg_packages         #>>packages.log
-	yum_install_packages $others              #>>packages.log
- 	yum_install_packages $ntpdate_package
+        yum_install_packages $basic_packages      #>>packages.log
+        yum_install_packages $toolkit_packages    #>packages.log
+        yum_install_packages $xtrabackup_packages #>>packages.log
+        yum_install_packages $mysql_oracle        #>>packages.log
+        yum_install_packages $php_packages        #>>packages.log
+        yum_install_packages $pg_packages         #>>packages.log
+        yum_install_packages $others              #>>packages.log
+        yum_install_packages $ntpdate_package
 
 }
 main

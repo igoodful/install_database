@@ -79,11 +79,11 @@ function yum_install_packages() {
             fi
         fi
     done
-    echo "=============================================="    
+    echo "=============================================="
     echo "Installed packages: ${installed[*]}"
     echo "Not found packages: ${not_found[*]}"
     echo "Failed packages: ${failed[*]}"
-    echo "=============================================="    
+    echo "=============================================="
 
     if [ ${#installed[@]} -eq ${#packages[@]} ]; then
         return 0
@@ -99,12 +99,12 @@ function user_add(){
 	echo "create user ... "
 	cat /etc/passwd  |awk -F':' '{print $1}' |grep "${linux_user}"
 	if [ $? == 0 ]
-	then 
+	then
 		echo "$linux_user exists ..."
 	else
 		useradd ${linux_user}
 		echo ${linux_user}:${linux_password}|chpasswd
-	
+
 	fi
 	echo "create user done"
 
@@ -123,7 +123,7 @@ function mysql_download(){
 	cd ${soft_dir}
 	if [ -f "${soft_dir}/${mysql_targz_name}" ]
 	then
-		echo "${soft_dir}/${mysql_targz_name}   exists ..."	
+		echo "${soft_dir}/${mysql_targz_name}   exists ..."
 		md5_tmp=$(md5sum ${soft_dir}/${mysql_targz_name} |awk '{print $1}')
 		if [ "$md5_tmp" == "$mysql_md5" ]
 		then

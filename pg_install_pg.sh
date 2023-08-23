@@ -167,12 +167,12 @@ function conf_update() {
 		# 新建配置文件
 		cat >$install_dir/data/postgresql.conf <<EOF
 port = $port
-listen_addresses = '*' 
-max_connections = 10240 
+listen_addresses = '*'
+max_connections = 10240
 shared_buffers = ${shared_buffers}GB
-effective_cache_size = ${effective_cache_size}GB  
-work_mem = 64MB 
-maintenance_work_mem = 512MB 
+effective_cache_size = ${effective_cache_size}GB
+work_mem = 64MB
+maintenance_work_mem = 512MB
 dynamic_shared_memory_type = posix
 wal_level = replica
 fsync = on
@@ -181,62 +181,62 @@ max_wal_size = ${max_wal_size}GB
 min_wal_size = 1GB
 archive_mode = on
 archive_command = 'archive_dir="$install_dir/archive";(test -d \${archive_dir} || mkdir -p \${archive_dir}) && cp %p \${archive_dir}/%f;'
-#archive_cleanup_command = 'pg_archivecleanup /data/postgresql/data_5432/pg_wal %r' 
-recovery_target_timeline = 'latest' 
-max_wal_senders = 64 
-wal_sender_timeout = 60s 
-wal_receiver_timeout = 60s	
+#archive_cleanup_command = 'pg_archivecleanup /data/postgresql/data_5432/pg_wal %r'
+recovery_target_timeline = 'latest'
+max_wal_senders = 64
+wal_sender_timeout = 60s
+wal_receiver_timeout = 60s
 wal_receiver_status_interval = 10s
-#wal_keep_segments = 300 
+#wal_keep_segments = 300
 synchronous_commit = 'local'
-synchronous_standby_names = '*'	
+synchronous_standby_names = '*'
 ##仅在从节点开启，postgresql.auto.conf文件参数优先级高于此处参数优先级
-#primary_conninfo = 'application_name=myapp user=repuser password=repl_pwd host=192.168.59.21 port=5432 sslmode=disable sslcompression=0 gssencmode=disable krbsrvname=postgres target_session_attrs=any' 
-hot_standby = on 
+#primary_conninfo = 'application_name=myapp user=repuser password=repl_pwd host=192.168.59.21 port=5432 sslmode=disable sslcompression=0 gssencmode=disable krbsrvname=postgres target_session_attrs=any'
+hot_standby = on
 hot_standby_feedback = on
 
 
 logging_collector = on
 log_destination = 'csvlog'
 log_directory = '$install_dir/log'
-log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log' 
-log_file_mode = 0640 
+log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+log_file_mode = 0640
 log_rotation_age = 1d
 log_rotation_size = 1GB
 log_truncate_on_rotation = on
-log_checkpoints = on       
-log_connections = off                          
-log_disconnections = off                     
-log_error_verbosity = verbose            
+log_checkpoints = on
+log_connections = off
+log_disconnections = off
+log_error_verbosity = verbose
 log_lock_waits = on
-log_statement = 'ddl'                           
-log_min_messages = WARNING         
-log_min_error_statement = ERROR   
-log_duration = on                                 
-log_min_duration_statement = 5000 
-log_timezone = 'Asia/Shanghai'          
-log_replication_commands = on        
+log_statement = 'ddl'
+log_min_messages = WARNING
+log_min_error_statement = ERROR
+log_duration = on
+log_min_duration_statement = 5000
+log_timezone = 'Asia/Shanghai'
+log_replication_commands = on
 log_hostname = off
 deadlock_timeout = 1
 
 log_autovacuum_min_duration = 0
 autovacuum_vacuum_scale_factor=0.001
-autovacuum = on		                               	
-autovacuum_max_workers = 4	        	
+autovacuum = on
+autovacuum_max_workers = 4
 
 
 
 timezone = 'Asia/Shanghai'
 datestyle = 'iso, mdy'
-lc_messages = 'en_US.utf8' 
-lc_monetary = 'en_US.utf8' 
-lc_numeric = 'en_US.utf8' 
-lc_time = 'en_US.utf8' 
+lc_messages = 'en_US.utf8'
+lc_monetary = 'en_US.utf8'
+lc_numeric = 'en_US.utf8'
+lc_time = 'en_US.utf8'
 default_text_search_config = 'pg_catalog.english'
 EOF
 		echo "==================="
 		cat >postgresql.auto.conf <<EOF
-#primary_conninfo = 'application_name=myapp user=repuser password=replpwd host=192.168.59.21 port=5432 sslmode=disable sslcompression=0 gssencmode=disable krbsrvname=postgres target_session_attrs=any' 
+#primary_conninfo = 'application_name=myapp user=repuser password=replpwd host=192.168.59.21 port=5432 sslmode=disable sslcompression=0 gssencmode=disable krbsrvname=postgres target_session_attrs=any'
 
 EOF
 	else

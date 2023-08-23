@@ -6,7 +6,7 @@ pg_package_name="postgresql-${pg_version}.tar.gz"
 
 
 function install_deps(){
-	yum install -y zlib-devel readline-devel gcc python-devel perl-ExtUtils-Embed lrzsz 
+	yum install -y zlib-devel readline-devel gcc python-devel perl-ExtUtils-Embed lrzsz
 
 }
 
@@ -40,7 +40,7 @@ function install_pg(){
 function set_pg_conf(){
 	cat > $pg_basedir/data/postgresql.conf <<EOF
 listen_addresses = '*'
-max_connections = 1000 
+max_connections = 1000
 shared_buffers = 2048MB
 dynamic_shared_memory_type = posix
 wal_level = replica
@@ -71,16 +71,16 @@ lc_numeric = 'en_US.utf8'
 lc_time = 'en_US.utf8'
 default_text_search_config = 'pg_catalog.english'
 # 配置postgresql.conf参数文件，注意：此处和主节点不同之处为多了同步参数：primary_conninfo
-# primary_conninfo = 'application_name=harbor user=repuser password=replpwd host=192.168.59.21 port=5432 sslmode=disable sslcompression=0 gssencmode=disable krbsrvname=postgres target_session_attrs=any' 
+# primary_conninfo = 'application_name=harbor user=repuser password=replpwd host=192.168.59.21 port=5432 sslmode=disable sslcompression=0 gssencmode=disable krbsrvname=postgres target_session_attrs=any'
 # connection string to sending server #仅在从节点开启，postgresql.auto.conf文件参数优先级高于此处参数优先级
 EOF
 # 编辑standby.signal文件（就在数据文件夹内，以此标识从节点，当从节点提升为主节点后会自动删除，12版本该参数在postgresql.conf配置文件中，不过该文件优先级高于postgresql.conf配置文件）
 	cat > $pg_basedir/data/standby.signal <<EOF
-standby_mode = 'on' 
+standby_mode = 'on'
 EOF
 
 	cat > $pg_basedir/data/standby.signal <<EOF
-primary_conninfo = 'application_name=harbor user=repuser password=replpwd host=192.168.59.21 port=5432 sslmode=disable sslcompression=0 gssencmode=disable krbsrvname=postgres target_session_attrs=any' 
+primary_conninfo = 'application_name=harbor user=repuser password=replpwd host=192.168.59.21 port=5432 sslmode=disable sslcompression=0 gssencmode=disable krbsrvname=postgres target_session_attrs=any'
 # connection string to sending server #仅在从节点开启，postgresql.auto.conf文件参数优先级高于此处参数优先级
 EOF
 
@@ -154,7 +154,7 @@ function add_user(){
 	#从节点查看用户、业务库、表信息
 	 \du
 	select * from pg_tables where tableowner='harbor';
-	
+
 }
 
 
