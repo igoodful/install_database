@@ -3,7 +3,7 @@ pg_version='15.2'
 linux_user="work"
 port=5432
 install_dir="/home/${linux_user}/pg_${port}"
-packages="gcc make zlib zlib-devel readline readline-devel openssl openssl-devel pam pam-devel lz4 lz4-devel tcl tcl-devel libxslt libxslt-devel libxml2 libxml2-devel perl-ExtUtils-Embed python-devel python3-devel systemtap-sdt-devel.x86_64"
+packages="gcc make zlib zlib-devel readline readline-devel openssl openssl-devel openldap openldap-devel pam pam-devel lz4 lz4-devel tcl tcl-devel libxslt libxslt-devel libxml2 libxml2-devel perl-ExtUtils-Embed python-devel python3-devel systemtap-sdt-devel.x86_64"
 
 function yum_install_packages() {
         # 将输入的软件包名称存储到数组中
