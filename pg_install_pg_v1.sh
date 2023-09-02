@@ -114,7 +114,7 @@ function download_and_extract() {
 function build_and_install() {
         local version=$1
         # 进入源码目录
-        cd "postgresql-$version" || echo "postgresql-$version is not exists" && exit 1
+        cd "postgresql-$version" || (echo "postgresql-$version is not exists" && exit 1)
 
         # 配置并编译
         echo "正在配置..."
