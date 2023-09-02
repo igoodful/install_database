@@ -15,7 +15,11 @@ emailAddress='igoodful@qq.com'
 CN='registry.igoodful.com'
 # 域名去掉后缀剩下的部分
 CN_PREFX='registry.igoodful'
-
+# 配置主机名称，
+HOSTNAME=''
+if [ "$HOSTNAME" = "" ]; then
+	HOSTNAME=$(hostname)
+fi
 # 生成CA私钥和CA证书
 function create_ca() {
 	openssl genrsa -out ca.key 4096
@@ -39,7 +43,7 @@ function create_server_ca() {
 		[alt_names]
 		DNS.1=${CN}
 		DNS.2=${CN_PREFX}
-		DNS.3=hostname
+		DNS.3=${HOSTNAME}
 	EOF
 	#
 	openssl x509 -req -sha512 -days 3650 -extfile v3.ext -CA ca.crt -CAkey ca.key -CAcreateserial -in ${CN}.csr -out ${CN}.crt
