@@ -43,11 +43,16 @@ function yum_install_packages() {
                 return 0
         else
                 #return 1
+                echo '存在依赖包未成功安装上 '
                 exit 1
         fi
         echo "======="
 }
 
+# 检查端口号是否被占用
+# 检查用户是否存在
+# 检查当前用户是否为root用户
+# 检查安装路径是否有数据
 function check() {
         lsof -i:$port
         if [ "$?" == "0" ]; then
@@ -114,9 +119,12 @@ function build_and_install() {
         # 配置并编译
         echo "正在配置..."
         ./configure --prefix="$install_dir" --with-pgport=$port --with-perl --with-python3 --with-tcl --with-openssl --with-pam --with-ldap --with-libxml --with-libxslt --with-lz4 --with-gssapi
+        # 编译
         if [ "$?" == "0" ]; then
                 echo "正在编译..."
                 make
+                echo "正在检查..."
+                make check
         else
                 echo -e "\033[49;31;1m configure error\033[0m"
                 exit 1
@@ -133,23 +141,29 @@ function build_and_install() {
         echo "正在创建数据目录..."
         mkdir -p "$install_dir/data"
         chown $linux_user:$linux_user "$install_dir/data"
-        chmod 700 "$install_dir/data"
+        chmod 755 "$install_dir/data"
+
+        # 创建归档目录
+        echo "正在创建归档目录..."
+        mkdir -p "$install_dir/archive"
+        chown $linux_user:$linux_user "$install_dir/archive"
+        chmod 755 "$install_dir/archive"
 
         # 创建日志目录
         echo "正在创建日志目录..."
         mkdir -p "$install_dir/log"
         chown $linux_user:$linux_user "$install_dir/log"
-        chmod 700 "$install_dir/log"
+        chmod 755 "$install_dir/log"
 
         # 创建临时目录
         echo "正在创建临时目录..."
         mkdir -p "$install_dir/tmp"
         chown $linux_user:$linux_user "$install_dir/tmp"
-        chmod 700 "$install_dir/tmp"
+        chmod 755 "$install_dir/tmp"
         echo "======="
 }
 
-function init() {
+function pg_initdb() {
         if [ -f $install_dir/bin/initdb ]; then
                 su - $linux_user -c "$install_dir/bin/initdb --pgdata=$install_dir/data --username=$linux_user --encoding=UTF8 --lc-collate=C --lc-ctype=en_US.utf8"
         else
@@ -158,16 +172,22 @@ function init() {
         fi
         echo "======="
 }
-function conf_update() {
+function set_postgresql_conf() {
         mem_total=$(free -g | grep Mem | awk '{print $2}')
         shared_buffers=$(expr $mem_total / 4)
+        if [ "$shared_buffers" = "0" ]; then
+                shared_buffers=1
+        fi
         effective_cache_size=$(expr $mem_total / 2)
+        if [ "$effective_cache_size" = "0" ]; then
+                effective_cache_size=1
+        fi
         max_wal_size=$(expr $mem_total / 2)
         if [ -e $install_dir/data/base ]; then
                 # 新建配置文件
                 cat >$install_dir/data/postgresql.conf <<EOF
-port = $port
 listen_addresses = '*'
+port = $port
 max_connections = 10240
 shared_buffers = ${shared_buffers}GB
 effective_cache_size = ${effective_cache_size}GB
@@ -179,27 +199,35 @@ fsync = on
 wal_sync_method = fsync
 max_wal_size = ${max_wal_size}GB
 min_wal_size = 1GB
+
+# 归档配置，默认只保存15天数据
 archive_mode = on
-archive_command = 'archive_dir="$install_dir/archive";(test -d \${archive_dir} || mkdir -p \${archive_dir}) && cp %p \${archive_dir}/%f;'
-#archive_cleanup_command = 'pg_archivecleanup /data/postgresql/data_5432/pg_wal %r'
-recovery_target_timeline = 'latest'
+archive_command = 'archive_dir="$install_dir/archive";(test -d \${archive_dir} || mkdir -p \${archive_dir}) && cp %p \${archive_dir}/%f;find \${archive_dir}/* -mtime +15 -exec rm -rf {} \;'
+
+# 恢复时使用
+# restore_command = 'cp $install_dir/archive/%f %p'
+# recovery_target_timeline = 'latest'
+# archive_cleanup_command = 'pg_archivecleanup /data/postgresql/data_5432/pg_wal %r'
+
 max_wal_senders = 64
 wal_sender_timeout = 60s
 wal_receiver_timeout = 60s
 wal_receiver_status_interval = 10s
-#wal_keep_segments = 300
+# wal_keep_segments = 300
 synchronous_commit = 'local'
 synchronous_standby_names = '*'
-##仅在从节点开启，postgresql.auto.conf文件参数优先级高于此处参数优先级
-#primary_conninfo = 'application_name=myapp user=repuser password=repl_pwd host=192.168.59.21 port=5432 sslmode=disable sslcompression=0 gssencmode=disable krbsrvname=postgres target_session_attrs=any'
+
+# 仅在从节点开启，postgresql.auto.conf文件参数优先级高于此处参数优先级
+# primary_conninfo = 'application_name=myapp user=repuser password=repl_pwd host=192.168.59.21 port=5432 sslmode=disable sslcompression=0 gssencmode=disable krbsrvname=postgres target_session_attrs=any'
 hot_standby = on
 hot_standby_feedback = on
+checkpoint_timeout = 5min
 
-
+# 日志配置
 logging_collector = on
 log_destination = 'csvlog'
 log_directory = '$install_dir/log'
-log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+log_filename = 'pg-%Y-%m-%d_%H%M%S.log'
 log_file_mode = 0640
 log_rotation_age = 1d
 log_rotation_size = 1GB
@@ -224,8 +252,6 @@ autovacuum_vacuum_scale_factor=0.001
 autovacuum = on
 autovacuum_max_workers = 4
 
-
-
 timezone = 'Asia/Shanghai'
 datestyle = 'iso, mdy'
 lc_messages = 'en_US.utf8'
@@ -248,9 +274,22 @@ EOF
         # pg_controldata | grep 'Database cluster state' # 查看主备角色状态
 }
 
+# 设置 pg_hba.conf
+function set_pg_hba_conf() {
+        echo "设置 $install_dir/data/pg_hba.conf"
+        cat >$install_dir/data/pg_hba.conf <<EOF
+# 格式：TYPE  DATABASE        USER            ADDRESS                 METHOD
+# 注意: ALL不匹配replication
+host replication repuser 0.0.0.0/0 md5
+host all         all     0.0.0.0/0 md5
+
+EOF
+}
+
 function start() {
         if [ -f $install_dir/bin/pg_ctl ]; then
                 su - $linux_user -c "$install_dir/bin/pg_ctl -D $install_dir/data  start"
+                sleep 10
                 lsof -i:$port
                 if [ "$?" == "0" ]; then
                         echo "pg_ctl success start"
@@ -267,15 +306,25 @@ function start() {
 
 }
 
+function pg_init() {
+        echo "pg_init..."
+        su - $linux_user -c "$install_dir/bin/psql -d postgres -c 'select version();' "
+        echo "创建复制用户：repuser"
+        su - $linux_user -c "$install_dir/bin/psql -d postgres -c 'create user repuser  replication  login encrypted  password 'repuser';' "
+        echo "pg_basebackup -D $install_dir/data -Fp -X stream -R -v -P -h 127.0.0.1 -p ${port} -U repuser"
+}
+
 # 主程序
 function main() {
         check
         yum_install_packages $packages
         download_and_extract "$pg_version"
         build_and_install "$pg_version"
-        init
-        conf_update
+        pg_initdb
+        set_postgresql_conf
+        set_pg_hba_conf
         start
+        pg_init
         echo "======="
 }
 
