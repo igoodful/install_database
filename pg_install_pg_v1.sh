@@ -147,25 +147,25 @@ function build_and_install() {
 	echo "正在创建数据目录..."
 	mkdir -p "$install_dir/data"
 	chown $linux_user:$linux_user "$install_dir/data"
-	chmod 755 "$install_dir/data"
+	chmod 700 "$install_dir/data"
 
 	# 创建归档目录
 	echo "正在创建归档目录..."
 	mkdir -p "$install_dir/archive"
 	chown $linux_user:$linux_user "$install_dir/archive"
-	chmod 755 "$install_dir/archive"
+	chmod 700 "$install_dir/archive"
 
 	# 创建日志目录
 	echo "正在创建日志目录..."
 	mkdir -p "$install_dir/log"
 	chown $linux_user:$linux_user "$install_dir/log"
-	chmod 755 "$install_dir/log"
+	chmod 700 "$install_dir/log"
 
 	# 创建临时目录
 	echo "正在创建临时目录..."
 	mkdir -p "$install_dir/tmp"
 	chown $linux_user:$linux_user "$install_dir/tmp"
-	chmod 755 "$install_dir/tmp"
+	chmod 700 "$install_dir/tmp"
 	echo "======="
 }
 
