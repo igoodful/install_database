@@ -74,8 +74,8 @@ function install_python() {
         export LDFLAGS
         echo "install_python ..."
         tar -xvJf Python-${python_version}.tar.xz
-        cd Python-${python_version} || echo "Python-${python_version} not exists" && exit 1
-        ./configure --prefix=${python_basedir} --enable-optimizations
+        cd Python-${python_version} || (echo "Python-${python_version} not exists" && exit 1)
+        ./configure --prefix=${python_basedir} --enable-optimizations --enable-shared 
         make -j $(nproc)
         make install
         ${python_bindir}/python3 -V
