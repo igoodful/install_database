@@ -1,4 +1,5 @@
 #!/bin/bash
+log_tmp=$(date +%Y%m%d-%H:%M:%S)
 pg_version='15.2'
 linux_user="work"
 port=5432
@@ -118,13 +119,14 @@ function build_and_install() {
 
         # 配置并编译
         echo "正在配置..."
-        ./configure --prefix="$install_dir" --with-pgport=$port --with-perl --with-python3 --with-tcl --with-openssl --with-pam --with-ldap --with-libxml --with-libxslt --with-lz4 --with-gssapi
+        ./configure --prefix="$install_dir" --with-pgport=$port --with-perl --with-python --with-tcl --with-openssl --with-pam --with-ldap --with-libxml --with-libxslt --with-lz4 --with-gssapi
         # 编译
         if [ "$?" == "0" ]; then
                 echo "正在编译..."
-                make
+                make > $install_dir/log/pg_install.$log_tmp
                 echo "正在检查..."
-                make check
+		chown -R ${linux_user}.${linux_user} ./
+                su $linux_user -c 'make check'
         else
                 echo -e "\033[49;31;1m configure error\033[0m"
                 exit 1
@@ -132,7 +134,8 @@ function build_and_install() {
         if [ "$?" == "0" ]; then
                 # 安装
                 echo "正在安装..."
-                make install
+		echo "======================" >> $install_dir/log/pg_install.$log_tmp
+                make install >> $install_dir/log/pg_install.$log_tmp
         else
                 echo -e "\033[49;31;1m make error\033[0m"
                 exit 1
@@ -280,8 +283,9 @@ function set_pg_hba_conf() {
         cat >$install_dir/data/pg_hba.conf <<EOF
 # 格式：TYPE  DATABASE        USER            ADDRESS                 METHOD
 # 注意: ALL不匹配replication
-host replication repuser 0.0.0.0/0 md5
-host all         all     0.0.0.0/0 md5
+local   all         all               trust
+host    replication repuser 0.0.0.0/0 trust
+host    all         all     0.0.0.0/0 trust
 
 EOF
 }
