@@ -2,52 +2,54 @@
 log_tmp=$(date +%Y%m%d-%H:%M:%S)
 pg_version='15.2'
 linux_user="work"
-port=5432
+port=5435
 install_dir="/home/${linux_user}/pg_${port}"
+python_bin_path='/usr/local/python-3.10.11/bin/python3'
+
 packages="gcc make zlib zlib-devel readline readline-devel openssl openssl-devel openldap openldap-devel pam pam-devel lz4 lz4-devel tcl tcl-devel libxslt libxslt-devel libxml2 libxml2-devel perl-ExtUtils-Embed python-devel python3-devel systemtap-sdt-devel.x86_64"
 
 function yum_install_packages() {
-        # 将输入的软件包名称存储到数组中
-        local packages=("$@")
+	# 将输入的软件包名称存储到数组中
+	local packages=("$@")
 
-        installed=() # 存储已安装的软件包
-        not_found=() # 存储不存在的软件包
-        failed=()    # 存储安装失败的软件包
+	installed=() # 存储已安装的软件包
+	not_found=() # 存储不存在的软件包
+	failed=()    # 存储安装失败的软件包
 
-        for pkg in "${packages[@]}"; do
-                if yum list installed "$pkg" >/dev/null 2>&1; then
-                        installed+=("$pkg")
-                        echo "$pkg already installed"
-                else
-                        if yum list available "$pkg" >/dev/null 2>&1; then
-                                yum install -y "$pkg"
-                                if [ $? -eq 0 ]; then
-                                        installed+=("$pkg")
-                                        echo "$pkg installed successfully"
-                                else
-                                        failed+=("$pkg")
-                                        echo "$pkg installation failed"
-                                fi
-                        else
-                                not_found+=("$pkg")
-                                echo "$pkg not found in any repository"
-                        fi
-                fi
-        done
-        echo -e "\033[49;31;1m ---------------------------------->\033[0m"
-        echo "Installed packages: ${installed[*]}"
-        echo "Not found packages: ${not_found[*]}"
-        echo "Failed packages: ${failed[*]}"
-        echo -e "\033[49;31;1m ---------------------------------->\033[0m"
+	for pkg in "${packages[@]}"; do
+		if yum list installed "$pkg" >/dev/null 2>&1; then
+			installed+=("$pkg")
+			echo "$pkg already installed"
+		else
+			if yum list available "$pkg" >/dev/null 2>&1; then
+				yum install -y "$pkg"
+				if [ $? -eq 0 ]; then
+					installed+=("$pkg")
+					echo "$pkg installed successfully"
+				else
+					failed+=("$pkg")
+					echo "$pkg installation failed"
+				fi
+			else
+				not_found+=("$pkg")
+				echo "$pkg not found in any repository"
+			fi
+		fi
+	done
+	echo -e "\033[49;31;1m ---------------------------------->\033[0m"
+	echo "Installed packages: ${installed[*]}"
+	echo "Not found packages: ${not_found[*]}"
+	echo "Failed packages: ${failed[*]}"
+	echo -e "\033[49;31;1m ---------------------------------->\033[0m"
 
-        if [ ${#installed[@]} -eq ${#packages[@]} ]; then
-                return 0
-        else
-                #return 1
-                echo '存在依赖包未成功安装上 '
-                exit 1
-        fi
-        echo "======="
+	if [ ${#installed[@]} -eq ${#packages[@]} ]; then
+		return 0
+	else
+		#return 1
+		echo '存在依赖包未成功安装上 '
+		exit 1
+	fi
+	echo "======="
 }
 
 # 检查端口号是否被占用
@@ -55,140 +57,141 @@ function yum_install_packages() {
 # 检查当前用户是否为root用户
 # 检查安装路径是否有数据
 function check() {
-        lsof -i:$port
-        if [ "$?" == "0" ]; then
-                echo "$port is used"
-                exit 1
-        else
-                echo "port pass"
+	lsof -i:$port
+	if [ "$?" == "0" ]; then
+		echo "$port is used"
+		exit 1
+	else
+		echo "port pass"
 
-        fi
+	fi
 
-        grep "^${linux_user}:" /etc/passwd
-        if [ "$?" == "0" ]; then
-                echo "user pass"
-        else
-                echo "add user $linux_user"
-                useradd $linux_user
-                echo "$linux_user" | passwd --stdin $linux_user
-        fi
+	grep "^${linux_user}:" /etc/passwd
+	if [ "$?" == "0" ]; then
+		echo "user pass"
+	else
+		echo "add user $linux_user"
+		useradd $linux_user
+		echo "$linux_user" | passwd --stdin $linux_user
+	fi
 
-        current_user=$(whoami)
-        if [ "$current_user" == "root" ]; then
-                echo "current user is root ,so pass"
-        else
-                echo "current user is not root"
-                exit 1
-        fi
-        if [ -x $install_dir ]; then
-                if [ -d $install_dir/data ]; then
-                        echo "$install_dir/data exists"
-                        exit 1
-                fi
-        else
-                mkdir -p $install_dir
-        fi
-        echo "======="
+	current_user=$(whoami)
+	if [ "$current_user" == "root" ]; then
+		echo "current user is root ,so pass"
+	else
+		echo "current user is not root"
+		exit 1
+	fi
+	if [ -x $install_dir ]; then
+		if [ -d $install_dir/data ]; then
+			echo "$install_dir/data exists"
+			exit 1
+		fi
+	else
+		mkdir -p $install_dir
+	fi
+	echo "======="
 
 }
 
 # 下载并解压源码包
 function download_and_extract() {
-        local version=$1
-        local filename="postgresql-$version.tar.gz"
-        local url="https://ftp.postgresql.org/pub/source/v$version/$filename"
+	local version=$1
+	local filename="postgresql-$version.tar.gz"
+	local url="https://ftp.postgresql.org/pub/source/v$version/$filename"
 
-        # 如果源码包已经存在，则不进行下载
-        if [[ -f "$filename" ]]; then
-                echo "源码包 $filename 已经存在，跳过下载。"
-        else
-                echo "正在下载源码包 $filename..."
-                wget "$url"
-        fi
+	# 如果源码包已经存在，则不进行下载
+	if [[ -f "$filename" ]]; then
+		echo "源码包 $filename 已经存在，跳过下载。"
+	else
+		echo "正在下载源码包 $filename..."
+		wget "$url"
+	fi
 
-        # 解压源码包
-        tar -xf "$filename"
-        echo "======="
+	# 解压源码包
+	tar -xf "$filename"
+	echo "======="
 }
 
 # 编译并安装 PostgreSQL
 function build_and_install() {
-        local version=$1
-        # 进入源码目录
-        cd "postgresql-$version" || (echo "postgresql-$version is not exists" && exit 1)
+	local version=$1
+	# 进入源码目录
+	cd "postgresql-$version" || (echo "postgresql-$version is not exists" && exit 1)
 
-        # 配置并编译
-        echo "正在配置..."
-        ./configure --prefix="$install_dir" --with-pgport=$port --with-perl --with-python --with-tcl --with-openssl --with-pam --with-ldap --with-libxml --with-libxslt --with-lz4 --with-gssapi
-        # 编译
-        if [ "$?" == "0" ]; then
-                echo "正在编译..."
-                make > $install_dir/log/pg_install.$log_tmp
-                echo "正在检查..."
+	# 配置并编译
+	echo "正在配置..."
+	./configure --prefix="$install_dir" --with-pgport=$port --with-perl --with-tcl --with-openssl --with-pam --with-ldap --with-libxml --with-libxslt --with-lz4 --with-gssapi --with-python PYTHON=$python_bin_path
+	# 编译
+	if [ "$?" == "0" ]; then
+		echo "正在编译..."
+		mkdir -p $install_dir/log
+		make >$install_dir/log/pg_install.$log_tmp
+		echo "正在检查..."
 		chown -R ${linux_user}.${linux_user} ./
-                su $linux_user -c 'make check'
-        else
-                echo -e "\033[49;31;1m configure error\033[0m"
-                exit 1
-        fi
-        if [ "$?" == "0" ]; then
-                # 安装
-                echo "正在安装..."
-		echo "======================" >> $install_dir/log/pg_install.$log_tmp
-                make install >> $install_dir/log/pg_install.$log_tmp
-        else
-                echo -e "\033[49;31;1m make error\033[0m"
-                exit 1
-        fi
-        # 创建数据目录
-        echo "正在创建数据目录..."
-        mkdir -p "$install_dir/data"
-        chown $linux_user:$linux_user "$install_dir/data"
-        chmod 755 "$install_dir/data"
+		su $linux_user -c 'make check'
+	else
+		echo -e "\033[49;31;1m configure error\033[0m"
+		exit 1
+	fi
+	if [ "$?" == "0" ]; then
+		# 安装
+		echo "正在安装..."
+		echo "======================" >>$install_dir/log/pg_install.$log_tmp
+		make install >>$install_dir/log/pg_install.$log_tmp
+	else
+		echo -e "\033[49;31;1m make error\033[0m"
+		exit 1
+	fi
+	# 创建数据目录
+	echo "正在创建数据目录..."
+	mkdir -p "$install_dir/data"
+	chown $linux_user:$linux_user "$install_dir/data"
+	chmod 755 "$install_dir/data"
 
-        # 创建归档目录
-        echo "正在创建归档目录..."
-        mkdir -p "$install_dir/archive"
-        chown $linux_user:$linux_user "$install_dir/archive"
-        chmod 755 "$install_dir/archive"
+	# 创建归档目录
+	echo "正在创建归档目录..."
+	mkdir -p "$install_dir/archive"
+	chown $linux_user:$linux_user "$install_dir/archive"
+	chmod 755 "$install_dir/archive"
 
-        # 创建日志目录
-        echo "正在创建日志目录..."
-        mkdir -p "$install_dir/log"
-        chown $linux_user:$linux_user "$install_dir/log"
-        chmod 755 "$install_dir/log"
+	# 创建日志目录
+	echo "正在创建日志目录..."
+	mkdir -p "$install_dir/log"
+	chown $linux_user:$linux_user "$install_dir/log"
+	chmod 755 "$install_dir/log"
 
-        # 创建临时目录
-        echo "正在创建临时目录..."
-        mkdir -p "$install_dir/tmp"
-        chown $linux_user:$linux_user "$install_dir/tmp"
-        chmod 755 "$install_dir/tmp"
-        echo "======="
+	# 创建临时目录
+	echo "正在创建临时目录..."
+	mkdir -p "$install_dir/tmp"
+	chown $linux_user:$linux_user "$install_dir/tmp"
+	chmod 755 "$install_dir/tmp"
+	echo "======="
 }
 
 function pg_initdb() {
-        if [ -f $install_dir/bin/initdb ]; then
-                su - $linux_user -c "$install_dir/bin/initdb --pgdata=$install_dir/data --username=$linux_user --encoding=UTF8 --lc-collate=C --lc-ctype=en_US.utf8"
-        else
-                echo "$install_dir/bin/initdb is not exists"
-                exit 1
-        fi
-        echo "======="
+	if [ -f $install_dir/bin/initdb ]; then
+		su - $linux_user -c "$install_dir/bin/initdb --pgdata=$install_dir/data --username=$linux_user --encoding=UTF8 --lc-collate=C --lc-ctype=en_US.utf8"
+	else
+		echo "$install_dir/bin/initdb is not exists"
+		exit 1
+	fi
+	echo "======="
 }
 function set_postgresql_conf() {
-        mem_total=$(free -g | grep Mem | awk '{print $2}')
-        shared_buffers=$(expr $mem_total / 4)
-        if [ "$shared_buffers" = "0" ]; then
-                shared_buffers=1
-        fi
-        effective_cache_size=$(expr $mem_total / 2)
-        if [ "$effective_cache_size" = "0" ]; then
-                effective_cache_size=1
-        fi
-        max_wal_size=$(expr $mem_total / 2)
-        if [ -e $install_dir/data/base ]; then
-                # 新建配置文件
-                cat >$install_dir/data/postgresql.conf <<EOF
+	mem_total=$(free -g | grep Mem | awk '{print $2}')
+	shared_buffers=$(expr $mem_total / 4)
+	if [ "$shared_buffers" = "0" ]; then
+		shared_buffers=1
+	fi
+	effective_cache_size=$(expr $mem_total / 2)
+	if [ "$effective_cache_size" = "0" ]; then
+		effective_cache_size=1
+	fi
+	max_wal_size=$(expr $mem_total / 2)
+	if [ -e $install_dir/data/base ]; then
+		# 新建配置文件
+		cat >$install_dir/data/postgresql.conf <<EOF
 listen_addresses = '*'
 port = $port
 max_connections = 10240
@@ -263,24 +266,24 @@ lc_numeric = 'en_US.utf8'
 lc_time = 'en_US.utf8'
 default_text_search_config = 'pg_catalog.english'
 EOF
-                echo "==================="
-                cat >postgresql.auto.conf <<EOF
+		echo "==================="
+		cat >postgresql.auto.conf <<EOF
 #primary_conninfo = 'application_name=myapp user=repuser password=replpwd host=192.168.59.21 port=5432 sslmode=disable sslcompression=0 gssencmode=disable krbsrvname=postgres target_session_attrs=any'
 
 EOF
-        else
-                echo "$install_dir/data/base is not exists"
-                exit 1
-        fi
-        chown -R $linux_user:$linux_user $install_dir
-        echo "======="
-        # pg_controldata | grep 'Database cluster state' # 查看主备角色状态
+	else
+		echo "$install_dir/data/base is not exists"
+		exit 1
+	fi
+	chown -R $linux_user:$linux_user $install_dir
+	echo "======="
+	# pg_controldata | grep 'Database cluster state' # 查看主备角色状态
 }
 
 # 设置 pg_hba.conf
 function set_pg_hba_conf() {
-        echo "设置 $install_dir/data/pg_hba.conf"
-        cat >$install_dir/data/pg_hba.conf <<EOF
+	echo "设置 $install_dir/data/pg_hba.conf"
+	cat >$install_dir/data/pg_hba.conf <<EOF
 # 格式：TYPE  DATABASE        USER            ADDRESS                 METHOD
 # 注意: ALL不匹配replication
 local   all         all               trust
@@ -288,48 +291,76 @@ host    replication repuser 0.0.0.0/0 trust
 host    all         all     0.0.0.0/0 trust
 
 EOF
+	chown -R $linux_user:$linux_user $install_dir
 }
 
 function start() {
-        if [ -f $install_dir/bin/pg_ctl ]; then
-                su - $linux_user -c "$install_dir/bin/pg_ctl -D $install_dir/data  start"
-                sleep 10
-                lsof -i:$port
-                if [ "$?" == "0" ]; then
-                        echo "pg_ctl success start"
-                else
-                        echo "pg_ctl not success start"
-                        exit 1
-                fi
+	if [ -f $install_dir/bin/pg_ctl ]; then
+		su - $linux_user -c "$install_dir/bin/pg_ctl -D $install_dir/data  start"
+		sleep 10
+		lsof -i:$port
+		if [ "$?" == "0" ]; then
+			echo "pg_ctl success start"
+		else
+			echo "pg_ctl not success start"
+			exit 1
+		fi
 
-        else
-                echo "$install_dir/bin/pg_ctl is not exists"
-                exit 1
-        fi
-        echo "======="
+	else
+		echo "$install_dir/bin/pg_ctl is not exists"
+		exit 1
+	fi
+	echo "======="
 
 }
 
 function pg_init() {
-        echo "pg_init..."
-        su - $linux_user -c "$install_dir/bin/psql -d postgres -c 'select version();' "
-        echo "创建复制用户：repuser"
-        su - $linux_user -c "$install_dir/bin/psql -d postgres -c 'create user repuser  replication  login encrypted  password 'repuser';' "
-        echo "pg_basebackup -D $install_dir/data -Fp -X stream -R -v -P -h 127.0.0.1 -p ${port} -U repuser"
+	echo "pg_init..."
+	echo "修改超级用户 ${linux_user} 的密码为 $linux_user"
+	$install_dir/bin/psql -h127.0.0.1 -p$port -U $linux_user postgres -c "alter user $linux_user with password '${linux_user}';"
+	echo "创建复制用户：repuser"
+	$install_dir/bin/psql -h127.0.0.1 -p$port -U $linux_user postgres -c "create user repuser  replication  login encrypted  password 'repuser';"
+}
+
+function set_default() {
+	echo "update $install_dir/data/pg_hba.conf"
+	cat >$install_dir/data/pg_hba.conf <<EOF
+# 格式：TYPE  DATABASE        USER            ADDRESS                 METHOD
+# 注意: ALL不匹配replication
+host	replication	all     0.0.0.0/0	md5
+host	all        	all     0.0.0.0/0	md5
+
+EOF
+	chown -R $linux_user:$linux_user $install_dir
+
+	echo "$install_dir/bin/pg_ctl -D $install_dir/data  stop"
+	su - $linux_user -c "$install_dir/bin/pg_ctl -D $install_dir/data  stop"
+
+	sleep 10
+	echo "$install_dir/bin/pg_ctl -D $install_dir/data  start"
+	su - $linux_user -c "$install_dir/bin/pg_ctl -D $install_dir/data  start"
+
+	echo ""
+	$install_dir/bin/psql -h127.0.0.1 -p$port -U $linux_user postgres -c "select usename,usesysid from pg_user;"
+	$install_dir/bin/psql -h127.0.0.1 -p$port -U $linux_user postgres -c "select rolname,oid from pg_roles;"
+	$install_dir/bin/psql -h127.0.0.1 -p$port -U $linux_user postgres -c "select spcname,oid from pg_tablespace;"
+	echo "$install_dir/bin/pg_basebackup -Fp -X stream -R -v -P -h 127.0.0.1 -p ${port} -U repuser -D $install_dir/backup"
+
 }
 
 # 主程序
 function main() {
-        check
-        yum_install_packages $packages
-        download_and_extract "$pg_version"
-        build_and_install "$pg_version"
-        pg_initdb
-        set_postgresql_conf
-        set_pg_hba_conf
-        start
-        pg_init
-        echo "======="
+	check
+	yum_install_packages $packages
+	download_and_extract "$pg_version"
+	build_and_install "$pg_version"
+	pg_initdb
+	set_postgresql_conf
+	set_pg_hba_conf
+	start
+	pg_init
+	set_default
+	echo "======="
 }
 
 # 示例用法
