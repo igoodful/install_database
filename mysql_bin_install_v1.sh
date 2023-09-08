@@ -388,6 +388,28 @@ function mysql_init() {
         fi
 }
 
+function create_mysqld_service(){
+cat > /usr/lib/systemd/system/mysql_${mysql_port}.service<<EOF
+[Unit]
+Description=mysql_${mysql_port}
+After=network.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+User=$linux_user
+Group=$linux_user
+Type=simple
+ExecStart=${mysql_bin_dir}/mysqld_safe --defaults-file=${mysql_conf_dir}/my.cnf --user=$linux_user
+Restart=on-failure
+LimitNOFILE=1024000
+LimitNPROC=1024000
+TimeoutStopSec=15
+PrivateTmp=false
+EOF
+}
+
 function main() {
         yum_install_packages $packages
         user_add
