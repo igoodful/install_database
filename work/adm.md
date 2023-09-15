@@ -1,35 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # 安装
 
 ```bash
@@ -1970,7 +1940,80 @@ mysql> select * from gdbc_backup_alarm_reminder;
 
 
 
+```
+2023-09-13 15:43:20.398691 daemon process start
+2023-09-13 15:43:21.462734 ERROR: not find dbscale process start by this daemon, restart dbscale
+Starting DBScale...
+./dbscale-service.sh:行155: /proc/sys/net/ipv4/tcp_max_syn_backlog: 权限不够
+./dbscale-service.sh:行156: /proc/sys/net/core/somaxconn: 权限不够
+2023-09-13 15:43:22.385292 (281468100149264) [ WARN] <option.cc:5657> option [main.driver.admin-port] is deprecated, ignore it
+done.
+2023-09-13 16:03:06.636963 daemon check disk io
+2023-09-13 16:03:12.250341 daemon check disk io
+2023-09-13 16:09:32.323250 daemon check disk io
+2023-09-13 16:33:49.310123 daemon check disk io
+2023-09-13 16:33:55.201873 ERROR: dbscale shutdown
+2023-09-13 16:34:32.705519 ERROR: not find dbscale process start by this daemon, restart dbscale
+Starting DBScale...
+./dbscale-service.sh:行155: /proc/sys/net/ipv4/tcp_max_syn_backlog: 权限不够
+./dbscale-service.sh:行156: /proc/sys/net/core/somaxconn: 权限不够
+done.
+2023-09-14 05:43:35.850275 ERROR: not find dbscale process start by this daemon, restart dbscale
+Starting DBScale...
+./dbscale-service.sh:行155: /proc/sys/net/ipv4/tcp_max_syn_backlog: 权限不够
+./dbscale-service.sh:行156: /proc/sys/net/core/somaxconn: 权限不够
+done.
+2023-09-14 09:18:16.535529 ERROR: not find dbscale process start by this daemon, restart dbscale
+Starting DBScale...
+./dbscale-service.sh:行155: /proc/sys/net/ipv4/tcp_max_syn_backlog: 权限不够
+./dbscale-service.sh:行156: /proc/sys/net/core/somaxconn: 权限不够
+done.
+2023-09-14 17:22:47.936690 ERROR: not find dbscale process start by this daemon, restart dbscale
+process 2173069 is occupied by dbscale
+Start the same configuration file in the same directory,
+Or the configuration file configures the same PID file.
+2023-09-14 20:31:00.700807 ERROR: not find dbscale process start by this daemon, restart dbscale
+Starting DBScale...
+./dbscale-service.sh:行155: /proc/sys/net/ipv4/tcp_max_syn_backlog: 权限不够
+./dbscale-service.sh:行156: /proc/sys/net/core/somaxconn: 权限不够
+fail.
+2023-09-14 20:31:20.262982 ERROR: not find dbscale process start by this daemon, restart dbscale
+Starting DBScale...
+./dbscale-service.sh:行155: /proc/sys/net/ipv4/tcp_max_syn_backlog: 权限不够
+./dbscale-service.sh:行156: /proc/sys/net/core/somaxconn: 权限不够
+done.
+2023-09-14 22:50:30.196766 ERROR: not find dbscale process start by this daemon, restart dbscale
+Starting DBScale...
+./dbscale-service.sh:行155: /proc/sys/net/ipv4/tcp_max_syn_backlog: 权限不够
+./dbscale-service.sh:行156: /proc/sys/net/core/somaxconn: 权限不够
 
+
+
+
+[Unit]
+Description=System Logging Service
+;Requires=syslog.socket
+Wants=network.target network-online.target
+After=network.target network-online.target
+Documentation=man:rsyslogd(8)
+Documentation=http://www.rsyslog.com/doc/
+ 
+[Service]
+Type=notify
+EnvironmentFile=-/etc/sysconfig/rsyslog
+ExecStart=/usr/sbin/rsyslogd -n $SYSLOGD_OPTIONS
+Restart=on-failure
+UMask=0066
+StandardOutput=null
+Restart=on-failure
+MemoryAccounting=yes
+MemoryMax=80M
+MemoryHigh=8M
+ 
+[Install]
+WantedBy=multi-user.target
+;Alias=syslog.service
+```
 
 
 
