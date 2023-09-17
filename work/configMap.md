@@ -76,14 +76,15 @@ kubectl get cm -A
 
 ## 创建
 
-从字面创建
-从文件创建
-从目录创建
-从环境变量配置文件创建
 
-### 使用字面值创建
+
+### （1）使用--from-literal选项在命令行中直接创建
 
 ```bash
+kubectl create configmap mysql-configmap-literal --from-literal=user.name=liumiao --from-literal=user.id=1001
+
+[root@host131 config]#
+
 # 创建
 [root@k8s-master ~]# kubectl create configmap user-configmap --from-literal=id=1001 --from-literal=name=zhangsan --from-literal=age=30 
 configmap/user-configmap created
@@ -176,6 +177,24 @@ data:
 
 
 
+### （2）使用--from-file选项指定配置文件创建
+
+
+
+
+
+
+
+
+
+### （3）使用--from-file选项指定目录进行创建
+
+
+
+
+
+### （4）使用-f选项指定标准的ConfigMap的yaml文件进行创建
+
 
 
 
@@ -189,9 +208,18 @@ data:
 
 
 ```bash
-# kubectl get cm  user-configmap -o yaml
+# 查询缺省的default命名空间的ConfigMap信息
+kubectl get cm
 
- # kubectl get configmaps game-config -o yaml
+# 查询指定命令空间的ConfigMap信息
+kubectl get cm -n igoodful
+
+# 查询所有命令空间的ConfigMap信息
+kubectl get cm -A
+
+# yaml格式输出
+kubectl get cm  user-configmap -o yaml
+
 
 
 ```
@@ -238,7 +266,7 @@ data:
 # 通过yaml文件的方式删除
 $ kubectl delete -f configmap-test01.yaml
 
-# 直接删除资源
+# 直接删除资源 kubectl delete configmap ConfigMap名称
 $ kubectl delete cm cm-test01
 
 
@@ -612,17 +640,137 @@ mysql>
 
 
 
+### redis案例
+
+redis-pvc.yaml
+
+```yaml
+# docker pull sameersbn/redis:4.0.9-3
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  capacity:          
+    storage: 5Gi
+  accessModes:       
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+  - hard
+  - nfsvers=4.1
+  nfs:               
+    server: 172.17.135.193
+    path: /nfs/redis      
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: redis
+spec:
+  resources:
+    requests:
+      storage: 5Gi      
+  accessModes:
+  - ReadWriteOnce
+  selector:
+    matchLabels:
+      app: redis
+
+```
 
 
 
+ **redis-deploy.yaml**
+
+```yaml
+## Service
+kind: Service
+apiVersion: v1
+metadata:
+  name: gitlab-redis
+  labels:
+    name: gitlab-redis
+spec:
+  type: ClusterIP
+  ports:
+    - name: redis
+      protocol: TCP
+      port: 6383
+      targetPort: redis
+  selector:
+    name: gitlab-redis
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: gitlab-redis
+  labels:
+    name: gitlab-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: gitlab-redis
+  template:
+    metadata:
+      name: gitlab-redis
+      labels:
+        name: gitlab-redis
+    spec:
+      containers:
+      - name: gitlab-redis
+        image: 'sameersbn/redis:4.0.9-3'
+        ports:
+        - name: redis
+          containerPort: 6383
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+          requests:
+            cpu: 1000m
+            memory: 2Gi
+        volumeMounts:
+          - name: data
+            mountPath: /var/lib/redis
+        livenessProbe:
+          exec:
+            command:
+              - redis-cli
+              - ping
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+              - redis-cli
+              - ping
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: redis
 
 
 
-
-
-
-
-
+# kubectl exec -it gitlab-redis-594d7cccd7-lppdg -n igoodful -- redis-cli
+# kubectl exec -it gitlab-redis-594d7cccd7-lppdg -n igoodful -- bash
+# kubectl get svc -n igoodful
+# kubectl get deploy -n igoodful
+# kubectl get pvc -n igoodful
+# kubectl get pv -n igoodful
+```
 
 
 
