@@ -13,6 +13,13 @@
 
 
 ```bash
+# 报错如下：
+Message from syslogd@master at Sep 18 20:32:02 ...
+ kernel:NMI watchdog: BUG: soft lockup - CPU#0 stuck for 21s! [kube-controller:7491]
+
+Message from syslogd@master at Sep 18 20:32:24 ...
+ kernel:NMI watchdog: BUG: soft lockup - CPU#0 stuck for 21s! [rootwrap:6671]
+
 # 使用top命令查看内存占用时，发现rsyslogd内存占用很高。
 [root@adm254 ~]# top
 top - 15:35:28 up 1 min,  1 user,  load average: 6.64, 1.97, 0.68
@@ -63,7 +70,7 @@ MiB Swap:      0.0 total,      0.0 free,      0.0 used.   4189.2 avail Mem
 
 
 
-
+kubectl create cm literal-config --from-literal=name=very --from-literal=age=charm
 
 
 
