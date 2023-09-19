@@ -274,6 +274,44 @@ rm -f /usr/lib/systemd/system/adm-dbinit.service
 
 
 
+/bin/sh -c /data/svr/MySQLPackage-8.0.26-Linux-glibc2.28-aarch64/tools/percona-xtrabackup/bin/xtrabackup  --defaults-file=/data/dbdata/3308/my3308.cnf --login-path=xtrlogin  --user=admin --password='123456'  --host=172.17.138.2 --port=3308 --backup  --compress  --extra-lsndir=/data/dbdata/3308/tmp/lsn --tmpdir=/data/dbdata/3308/tmp  --stream=xbstream 2> /data/dbdata/3308/tmp/172.17.138.2_3308_full.log | gzip  > /storage/tmp/backup_router/apple/3308/172.17.138.2-3308-20230918163125_full.xbstream.gz  
+
+
+mysql     699351  7.4  5.9 991232 460032 ?       Sl   16:31   0:22 /data/svr/MySQLPackage-8.0.26-Linux-glibc2.28-aarch64/tools/percona-xtrabackup/bin/xtrabackup --defaults-file=/data/dbdata/3308/my3308.cnf --login-path=xtrlogin --user=admin --password=x xxxxxx --host=172.17.138.2 --port=3308 --backup --compress --extra-lsndir=/data/dbdata/3308/tmp/lsn --tmpdir=/data/dbdata/3308/tmp --stream=xbstream
+
+
+
+root@7e7148450697:/app# cat /app/app/playbooks/cluster/project/roles/distribute_and_install_package/tasks/init.yml
+---
+
+- name: create svr directory.
+  file:
+    path: "{{ svr_dir }}"
+    state: directory
+
+- name: Download tar file
+  get_url:
+    url: "{{ package_url }}"
+    dest: "{{ svr_dir }}/{{ package_name }}"
+    checksum: "md5:{{ package_md5 }}"
+
+- name: create package directory.
+  file:
+    path: "{{ package_dir }}"
+    state: directory
+
+- name: unarchive the compressed binary executable file.
+  unarchive:
+    dest: "{{ package_dir }}"
+    src: "{{ svr_dir }}/{{ package_name }}"
+    remote_src: yes
+    creates: "{{ package_dir }}/ok"
+
+- name: create unarchive ok file.
+  file:
+    path: "{{ package_dir }}/ok"
+    state: touch
+
 
 
 ```

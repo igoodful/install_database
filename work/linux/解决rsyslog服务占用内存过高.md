@@ -130,6 +130,13 @@ WantedBy=multi-user.target
 
 
 
+```bash
+systemctl daemon-reload;
+systemctl restart rsyslog.service;
+```
+
+
+
 
 
 
