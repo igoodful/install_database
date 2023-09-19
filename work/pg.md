@@ -50,7 +50,10 @@ mkdir -p /home/postgres/pg_5433/data
 
 # GNU make 3.81+，作用：编译源码
  make --version
- 
+ cmake
+ gcc
+ gcc-c++
+ ncurses-devel
  # tar gzip bzip2，作用：解压PostgreSQL的安装包
 yum -y install tar
 yum -y install gzip
@@ -68,24 +71,26 @@ ldconfig -p |grep readline
 # zlib
 # 阻止使用 Zlib 库。 这会禁用对pg_dump 和 pg_restore中的压缩档案。
 --without-zlib
-
+yum -y install zlib
+yum -y install zlib-devel
 # icu pkg-config ICU4C 4.6+
 # 构建时不支持 ICU 库，禁用 ICU整理功能。
 --without-icu
-
+yum -y install libicu-devel
 # PL/Perl Perl 5.14+
 --with-perl
-
+yum -y install perl
+yum -y install perl-IPC-Run
 # PL/Python Python 3.2+
 # PL/Python 将是一个共享库，因此“libpython”库必须是共享库,当源码安装python时，必须使用--enable-shared配置python
 --with-python
-
+yum -y install python311/python36
 # PL/Tcl Tcl 8.4+
 --with-tcl
-
+yum -y install tcl
 # OpenSSL 1.0.1+
 --with-openssl
-
+yum -y install openssl
 # LZ4
 --with-lz4
 
@@ -105,10 +110,10 @@ ldconfig -p |grep readline
 
 # OpenLDAP
 --with-ldap
-
+yum -y install openldap
 # 使用 PAM（可插入身份验证模块）支持进行构建
 --with-pam
-
+yum -y install pam
 # 使用 libxml2 构建，启用 SQL/XML 支持。 Libxml2 版本 2.6.23+
 # pkg-config
 --with-libxml
@@ -237,7 +242,134 @@ ldconfig /home/work/pg_5432/lib
 
 
 
-
+```
+1wget https://ftp.postgresql.org/pub/source/v16.0/postgresql-16.0.tar.gz
+  2
+  3-- 创建用户
+  4groupadd -g 60000 pgsql
+  5useradd -u 60000 -g pgsql pgsql
+  6echo "lhr" | passwd --stdin pgsql
+  7
+  8
+  9-- 创建目录
+ 10mkdir -p /postgresql/{pgdata,archive,scripts,backup,pg16,soft}
+ 11chown -R pgsql:pgsql /postgresql
+ 12chmod -R 775 /postgresql
+ 13
+ 14
+ 15
+ 16-- 安装一些依赖包
+ 17yum install -y cmake make gcc zlib gcc-c++ perl readline readline-devel zlib zlib-devel \
+ 18perl python36 tcl openssl ncurses-devel openldap pam perl-IPC-Run libicu-devel
+ 19
+ 20
+ 21-- 编译
+ 22su - pgsql
+ 23cd /postgresql/soft
+ 24tar zxvf postgresql-16.0.tar.gz
+ 25cd postgresql-16.0
+ 26./configure --prefix=/postgresql/pg16
+ 27make -j 8 && make install
+ 28make world -j 8 && make install-world
+ 29
+ 30
+ 31
+ 32-- 配置环境变量
+ 33cat >>  ~/.bash_profile <<"EOF"
+ 34export LANG=en_US.UTF-8
+ 35export PS1="[\u@\h \W]\$ "
+ 36export PGPORT=5432
+ 37export PGDATA=/postgresql/pgdata
+ 38export PGHOME=/postgresql/pg16
+ 39export LD_LIBRARY_PATH=$PGHOME/lib:/lib64:/usr/lib64:/usr/local/lib64:/lib:/usr/lib:/usr/local/lib:$LD_LIBRARY_PATH
+ 40export PATH=$PGHOME/bin:$PATH:.
+ 41export DATE=`date +"%Y%m%d%H%M"`
+ 42export MANPATH=$PGHOME/share/man:$MANPATH
+ 43export PGHOST=$PGDATA
+ 44export PGUSER=postgres
+ 45export PGDATABASE=postgres
+ 46EOF
+ 47
+ 48source  ~/.bash_profile
+ 49
+ 50
+ 51
+ 52-- 初始化
+ 53su - pgsql
+ 54/postgresql/pg16/bin/initdb -D /postgresql/pgdata -E UTF8 --locale=en_US.utf8 -U postgres --data-checksums
+ 55
+ 56
+ 57
+ 58-- 修改参数
+ 59cat >> /postgresql/pgdata/postgresql.conf <<"EOF"
+ 60listen_addresses = '*'
+ 61port=5432
+ 62unix_socket_directories='/postgresql/pgdata'
+ 63logging_collector = on
+ 64log_directory = 'pg_log'
+ 65log_filename = 'postgresql-%a.log'
+ 66log_truncate_on_rotation = on
+ 67EOF
+ 68
+ 69cat   >> /postgresql/pgdata/pg_hba.conf << EOF
+ 70# TYPE  DATABASE    USER    ADDRESS       METHOD
+ 71local     all       all                    trust
+ 72host      all       all   127.0.0.1/32     trust
+ 73host      all       all    0.0.0.0/0        md5
+ 74host   replication  all    0.0.0.0/0        md5
+ 75EOF
+ 76
+ 77-- 启动
+ 78su - pgsql
+ 79pg_ctl start
+ 80pg_ctl status
+ 81pg_ctl stop
+ 82
+ 83-- 修改密码
+ 84pg_ctl start 
+ 85psql
+ 86alter user postgres with  password 'lhr';
+ 87exit
+ 88
+ 89
+ 90-- 或：
+ 91nohup /postgresql/pg13/bin/postgres -D /postgresql/pgdata > /postgresql/pg13/pglog.out 2>&1 &
+ 92
+ 93
+ 94
+ 95
+ 96-- 配置系统服务
+ 97cat > /etc/systemd/system/PG16.service <<"EOF"
+ 98[Unit]
+ 99Description=PostgreSQL database server
+100Documentation=man:postgres(1)
+101After=network.target
+102
+103[Service]
+104Type=forking
+105User=pgsql
+106Group=pgsql
+107Environment=PGPORT=5432
+108Environment=PGDATA=/postgresql/pgdata
+109OOMScoreAdjust=-1000
+110ExecStart=/postgresql/pg16/bin/pg_ctl start -D ${PGDATA} -s -o "-p ${PGPORT}" -w -t 300
+111ExecStop=/postgresql/pg16/bin/pg_ctl stop -D ${PGDATA} -s -m fast
+112ExecReload=/postgresql/pg16/bin/pg_ctl reload -D ${PGDATA} -s
+113KillMode=mixed
+114KillSignal=SIGINT
+115TimeoutSec=0
+116
+117[Install]
+118WantedBy=multi-user.target
+119EOF
+120
+121
+122
+123systemctl daemon-reload
+124systemctl enable PG16
+125systemctl start PG16
+126systemctl status PG16
+```
 
 
 

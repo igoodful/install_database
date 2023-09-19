@@ -25,8 +25,25 @@ mysql --default-character-set='utf8mb4';
 
 
 
+dbscale dynamic ADD DATASERVER server_name=slave_dbscale_server,server_host=\"%s\",server_port=%s,server_user=\"%s\",server_password=\"%s\",dbscale_server"
 
+
+dbscale dynamic add dataserver server_name="slave_dbscale_server",server_host="172.17.138.180",server_port=3307,server_user=admin,server_password='123456';
+
+
+dbscale dynamic add server datasource slave_dbscale_source slave_dbscale_server-1-1000-400-800 group_id =20;
+
+
+
+
+dbscale dynamic remove datasource "source_name";
+
+
+ dbscale set global 'slave-dbscale-mode'=0;
+ dbscale set global "enable-read-only" = 0;
 ```
+
+the cluster is follower cluster, do not create.
 
 
 
@@ -92,15 +109,90 @@ done.
 
 
 
+```
+b9da174e-5208-11ee-8c26-00163e2d01d5:1-48,
+ba09b02c-5208-11ee-b5af-00163ed307b5:1-114489,
+ba245d88-5208-11ee-aae7-00163ee05610:1-4,
+f9958bc0-5604-11ee-a5a1-00163ea7a91c:1-4,
+f9f2f2be-5604-11ee-b389-00163e3cdeea:1-18
+
+
+b9da174e-5208-11ee-8c26-00163e2d01d5:1-49,
+ba09b02c-5208-11ee-b5af-00163ed307b5:1-114496,
+ba245d88-5208-11ee-aae7-00163ee05610:1-4
+
+
+
+
+Executed_Gtid_Set: b9da174e-5208-11ee-8c26-00163e2d01d5:1-49,
+ba09b02c-5208-11ee-b5af-00163ed307b5:1-114499,
+ba245d88-5208-11ee-aae7-00163ee05610:1-4,
+f9958bc0-5604-11ee-a5a1-00163ea7a91c:1-4,
+f9f2f2be-5604-11ee-b389-00163e3cdeea:1-18
+
+
+Executed_Gtid_Set: b9da174e-5208-11ee-8c26-00163e2d01d5:1-49,
+ba09b02c-5208-11ee-b5af-00163ed307b5:1-114499,
+ba245d88-5208-11ee-aae7-00163ee05610:1-4,
+f9958bc0-5604-11ee-a5a1-00163ea7a91c:1-4,
+f9f2f2be-5604-11ee-b389-00163e3cdeea:1-20
+
+
+```
+
+
+$$
+\sqrt(x)+\frac{1}{34}+2^2-a_n
+$$
 
 
 
 
 
+# 灾备
+
+
+
+## 一、switchover
+
+注意：该过程不是原子操作
+
+```sql
+# 1、连接测试：src和dst
+select now()
+
+# 2、设置src
+ dbscale set global "enable-read-only" = 1;
+
+# 3、获取并diff src和dst  gtid_executed
+
+# 4、设置src
+dbscale dynamic remove datasource slave_dbscale_source;
+dbscale dynamic remove dataserver slave_dbscale_server;
+dbscale set global 'slave-dbscale-mode'=1;
+
+# 5、设置dst
+stop slave;
+reset slave all;
+dbscale set global 'slave-dbscale-mode'=0;
+dbscale dynamic add dataserver server_name=slave_dbscale_server,server_host='172.17.138.180',server_port=3307,server_user='admin',server_password='123456',dbscale_server;
+
+dbscale dynamic add server datasource slave_dbscale_source slave_dbscale_server-1-1000-400-800 group_id =10;
+dbscale dynamic add slave slave_dbscale_source to normal_0;
+dbscale set global 'enable-read-only'=0;
+
+# 
+dbscale set global 'slave-dbscale-mode'=1;
+dbscale set global "enable-read-only" = 1;
+
+dbscale show dataservers\G;
+dbscale show datasource type=replication\G;
 
 
 
 
+
+```
 
 
 
