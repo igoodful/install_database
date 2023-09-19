@@ -12,24 +12,39 @@
 
 
 
+```
 
-
-
-
-
-
-
+Docsy
+Bootstrap Theme for Personal Blog and Documentations
+Geekdocs
+Ace documentation
 
 
 
 
 
 ```
+
+
+
+
+
+
+
+
+
+# 一、简介
+
+ConfigMap 是一种 API 对象，用来将非机密性的数据保存到键值对中
+
+作用：将你的环境配置信息和[容器镜像](https://kubernetes.io/zh-cn/docs/reference/glossary/?all=true#term-image)解耦，便于应用配置的修改。
+
+```
 ConfigMap是Kubernetes 在1.2版本中引入的功能
 为什么使用ConfigMap ?
 在使用命令的时候注意单词： configmap等价于cm，cm算是简写，类似于deployment可以使用命令时写成deploy，service可以写成svc，namespace可以写成ns，pod可以写成po。
 https://blog.csdn.net/liumiaocn/article/details/103818799
-
+ConfigMap 是一种 API 对象，用来将非机密性的数据保存到键值对中
 
 动态配置管理
 
@@ -68,32 +83,38 @@ kubectl get cm -n 命名空间名称
 # 查询所有命令空间的ConfigMap信息
 kubectl get configmap -A
 kubectl get cm -A
+
 ```
 
 
 
-
-
-## 创建
-
-从字面创建
-从文件创建
-从目录创建
-从环境变量配置文件创建
-
-### 使用字面值创建
-
 ```bash
 # 创建
-[root@k8s-master ~]# kubectl create configmap user-configmap --from-literal=id=1001 --from-literal=name=zhangsan --from-literal=age=30 
-configmap/user-configmap created
-[root@k8s-master ~]# kubectl get configmap
+# kubectl create cm literal-config  --from-literal=id=666 --from-literal=name=zhangsan --from-literal=age=22  -n igoodful
+configmap/literal-config created
+
+# kubectl get cm -n igoodful
 NAME               DATA   AGE
-kube-root-ca.crt   1      17d
-user-configmap     3      9s
-[root@k8s-master ~]# kubectl describe configmap user-configmap
-Name:         user-configmap
-Namespace:    myq
+kube-root-ca.crt   1      62m
+literal-config     3      15s
+
+# kubectl get cm literal-config -o yaml -n igoodful
+apiVersion: v1
+data:
+  age: "22"
+  id: "666"
+  name: zhangsan
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2023-09-18T13:45:20Z"
+  name: literal-config
+  namespace: igoodful
+  resourceVersion: "4395834"
+  uid: d040cbe2-f4c4-4729-acc1-41f340d9b132
+
+# kubectl describe cm literal-config -n igoodful
+Name:         literal-config
+Namespace:    igoodful
 Labels:       <none>
 Annotations:  <none>
 
@@ -101,10 +122,10 @@ Data
 ====
 age:
 ----
-30
+22
 id:
 ----
-1001
+666
 name:
 ----
 zhangsan
@@ -114,67 +135,86 @@ BinaryData
 
 Events:  <none>
 
-[root@k8s-master ~]# kubectl delete configmap user-configmap
-configmap "user-configmap" deleted
-
-########################
-[root@k8s-master glc]# cat user 
-id=200
-name=wangwu
-age=20
-[root@k8s-master glc]# kubectl create configmap user-configmap  --from-file=user
-configmap/user-configmap created
-[root@k8s-master glc]# kubectl get cm
-NAME               DATA   AGE
-kube-root-ca.crt   1      17d
-user-configmap     1      13s
-[root@k8s-master glc]# kubectl describe configmap user-configmap
-Name:         user-configmap
-Namespace:    myq
-Labels:       <none>
-Annotations:  <none>
-
-Data
-====
-user:
-----
-id=100
-name=zhangsan
-age=30
-
-
-BinaryData
-====
-
-Events:  <none>
-################################## yaml文件
-# 数字不要
-# cat user-configmap.yaml
+# 修改，类似于vim编辑器。若有语法错误，则无法保存
+# kubectl edit cm literal-config -n igoodful
+configmap/literal-config edited
+# kubectl get cm literal-config -n igoodful -o yaml
 apiVersion: v1
+data:
+  address: wuhan
+  age: "22"
+  id: "666"
+  name: zhangsan
+  salary: "10000"
 kind: ConfigMap
 metadata:
-  name: user-configmap
-data:
-  id: '100'
-  name: zhangsan
-  age: '30'
-
-# kubectl create -f user-configmap.yaml
-
-
-
-#  
+  creationTimestamp: "2023-09-18T13:45:20Z"
+  name: literal-config
+  namespace: igoodful
+  resourceVersion: "4396249"
+  uid: d040cbe2-f4c4-4729-acc1-41f340d9b132
+  
+# 删除
+# kubectl delete cm literal-config -n igoodful
+configmap "literal-config" deleted
+# kubectl get cm -n igoodful
+NAME               DATA   AGE
+kube-root-ca.crt   1      66m
 
 ```
 
 
 
-| id   | 100      |
-| ---- | -------- |
-| name | zhangsan |
-| age  | 30       |
 
 
+## 创建
+
+### （1）使用--from-literal选项在命令行中直接创建
+
+```bash
+# 创建
+# kubectl create cm literal-config  --from-literal=id=666 --from-literal=name=zhangsan --from-literal=age=22  -n igoodful
+configmap/literal-config created
+
+# kubectl get cm -n igoodful
+NAME               DATA   AGE
+kube-root-ca.crt   1      62m
+literal-config     3      15s
+
+# kubectl get cm literal-config -o yaml -n igoodful
+apiVersion: v1
+data:
+  age: "22"
+  id: "666"
+  name: zhangsan
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2023-09-18T13:45:20Z"
+  name: literal-config
+  namespace: igoodful
+  resourceVersion: "4395834"
+  uid: d040cbe2-f4c4-4729-acc1-41f340d9b132
+```
+
+
+
+### （2）使用--from-file选项指定配置文件创建
+
+
+
+
+
+
+
+
+
+### （3）使用--from-file选项指定目录进行创建
+
+
+
+
+
+### （4）使用-f选项指定标准的ConfigMap的yaml文件进行创建
 
 
 
@@ -189,9 +229,18 @@ data:
 
 
 ```bash
-# kubectl get cm  user-configmap -o yaml
+# 查询缺省的default命名空间的ConfigMap信息
+kubectl get cm
 
- # kubectl get configmaps game-config -o yaml
+# 查询指定命令空间的ConfigMap信息
+kubectl get cm -n igoodful
+
+# 查询所有命令空间的ConfigMap信息
+kubectl get cm -A
+
+# yaml格式输出
+kubectl get cm  user-configmap -o yaml
+
 
 
 ```
@@ -238,7 +287,7 @@ data:
 # 通过yaml文件的方式删除
 $ kubectl delete -f configmap-test01.yaml
 
-# 直接删除资源
+# 直接删除资源 kubectl delete configmap ConfigMap名称
 $ kubectl delete cm cm-test01
 
 
@@ -612,23 +661,163 @@ mysql>
 
 
 
+### redis案例
+
+redis-pvc.yaml
+
+```yaml
+# docker pull sameersbn/redis:4.0.9-3
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  capacity:          
+    storage: 5Gi
+  accessModes:       
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+  - hard
+  - nfsvers=4.1
+  nfs:               
+    server: 172.17.135.193
+    path: /nfs/redis      
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: redis
+spec:
+  resources:
+    requests:
+      storage: 5Gi      
+  accessModes:
+  - ReadWriteOnce
+  selector:
+    matchLabels:
+      app: redis
+
+```
+
+
+
+ **redis-deploy.yaml**
+
+```yaml
+## Service
+kind: Service
+apiVersion: v1
+metadata:
+  name: gitlab-redis
+  labels:
+    name: gitlab-redis
+spec:
+  type: ClusterIP
+  ports:
+    - name: redis
+      protocol: TCP
+      port: 6383
+      targetPort: redis
+  selector:
+    name: gitlab-redis
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: gitlab-redis
+  labels:
+    name: gitlab-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: gitlab-redis
+  template:
+    metadata:
+      name: gitlab-redis
+      labels:
+        name: gitlab-redis
+    spec:
+      containers:
+      - name: gitlab-redis
+        image: 'sameersbn/redis:4.0.9-3'
+        ports:
+        - name: redis
+          containerPort: 6383
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+          requests:
+            cpu: 1000m
+            memory: 2Gi
+        volumeMounts:
+          - name: data
+            mountPath: /var/lib/redis
+        livenessProbe:
+          exec:
+            command:
+              - redis-cli
+              - ping
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+              - redis-cli
+              - ping
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: redis
+
+
+
+# kubectl exec -it gitlab-redis-594d7cccd7-lppdg -n igoodful -- redis-cli
+# kubectl exec -it gitlab-redis-594d7cccd7-lppdg -n igoodful -- bash
+# kubectl get svc -n igoodful
+# kubectl get deploy -n igoodful
+# kubectl get pvc -n igoodful
+# kubectl get pv -n igoodful
+```
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+```
+daemonize yes
+port 6380
+loglevel notice
+databases 16
+save 900 1
+save 300 10
+save 60 10000
+rdbcompression yes
+dbfilename dump.rdb
+requirepass igoodful
+maxmemory 10737418240
+appendonly yes
+appendfsync everysec
+no-appendfsync-on-rewrite no
+auto-aof-rewrite-percentage 100
+auto-aof-rewrite-min-size 64mb
+slowlog-log-slower-than 10000
+slowlog-max-len 128
+hz 10
+```
 
 
 
