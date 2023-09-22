@@ -2,6 +2,41 @@
 
 
 
+```bash
+
+yum -y install go
+yum -y install npm
+yum -y install git
+
+yum -y install hugo
+npm install --save-dev autoprefixer
+npm install --save-dev postcss-cli
+npm install -D postcss
+
+
+
+hugo server --bind 0.0.0.0
+
+
+
+
+hugo new site quickstart
+cd quickstart
+git init
+git submodule add https://github.com/theNewDynamic/gohugo-theme-ananke.git themes/ananke
+
+
+
+
+
+
+
+
+
+
+
+```
+
 
 
 # 常用安装包
